@@ -226,7 +226,7 @@ async function crearSupabase() {
                 ok(await sb.auth.signInWithPassword({ email, password }));
             },
             async registrar({ email, password, nombre, telefono }) {
-                const data = ok(await sb.auth.signUp({ email, password, options: { data: { nombre, telefono } } }));
+                const data = ok(await sb.auth.signUp({ email, password, options: { data: { nombre, telefono }, emailRedirectTo: `${location.origin}/campus/` } }));
                 return { confirmar: !data.session };
             },
             async entrarDemo() { throw new Error('No disponible con el servicio real.'); },

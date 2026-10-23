@@ -20,7 +20,7 @@ function pintarNav() {
 }
 
 function mostrar(...nodos) {
-    vista.replaceChildren(bannerDemo(modo), ...nodos);
+    vista.replaceChildren(...[bannerDemo(modo), ...nodos].filter(Boolean));
     window.scrollTo(0, 0);
 }
 
@@ -64,7 +64,7 @@ function vistaAcceso(destino) {
             h('div', { class: 'acciones' },
                 h('button', { class: 'boton sec peq', type: 'button', onClick: async () => { await db.auth.entrarDemo('alumno'); sesion = await db.auth.sesion(); ir(destino || '#/'); render(); } }, 'Entrar como alumno de prueba'),
                 h('button', { class: 'boton sec peq', type: 'button', onClick: async () => { await db.auth.entrarDemo('admin'); sesion = await db.auth.sesion(); ir('#/'); render(); } }, 'Entrar como administrador de prueba'))) : null;
-        caja.replaceChildren(h('h2', {}, registrando ? 'Crea tu cuenta' : 'Entra al campus'), f.el, demo,
+        caja.replaceChildren(h('h2', {}, registrando ? 'Crea tu cuenta' : 'Entra al campus'), f.el, demo || '',
             h('p', { style: 'margin-top:1rem' }, registrando ? '¿Ya tienes cuenta? ' : '¿Aún no tienes cuenta? ',
                 h('a', { href: '#', onClick: (e) => { e.preventDefault(); registrando = !registrando; dibujar(); } }, registrando ? 'Entrar' : 'Crear cuenta')));
     };
