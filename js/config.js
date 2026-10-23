@@ -11,7 +11,7 @@
 
 export const CONFIG = {
     supabaseUrl: 'https://dgasniewuhfbirpgjbqh.supabase.co',
-    supabaseAnonKey: '',
+    supabaseAnonKey: 'sb_publishable_Elbhzk06GTizX85Fy4JLnw_18JQcRxX',
 
     marca: {
         nombre: 'Ingeniería Pinho',
