@@ -72,7 +72,7 @@ const camposCurso = [
 async function cursos(cnt) {
     const lista = await db.list('cursos', { order: 'orden' });
     const editar = async (c) => {
-        const v = c ? { ...c, incluye: (c.incluye || []).join('\n'), temario: (c.temario || []).join('\n') } : { precio: 120, modalidad: 'Virtual', orden: lista.length + 1 };
+        const v = c ? { ...c, incluye: (c.incluye || []).join('\n'), temario: (c.temario || []).join('\n') } : { precio: 500, modalidad: 'Virtual', orden: lista.length + 1 };
         const d = await pedirFormulario({ titulo: c ? 'Editar curso' : 'Nuevo curso', campos: camposCurso, valores: v });
         if (!d) return;
         const fila = { ...d, slug: crearSlug(d.slug || d.titulo), incluye: linea(d.incluye), temario: linea(d.temario) };

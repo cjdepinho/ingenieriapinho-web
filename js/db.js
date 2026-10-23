@@ -13,7 +13,7 @@ export const CURSOS_SEMILLA = [
         titulo: 'Inteligencia Artificial para Ingenieros',
         subtitulo: 'Desde cero hasta usarla en tu trabajo diario',
         descripcion: 'Aprende desde cero a utilizar herramientas de Inteligencia Artificial para mejorar tu productividad profesional.',
-        nivel: 'Básico', horas: null, precio: 120, modalidad: 'Virtual',
+        nivel: 'Básico', horas: null, precio: 500, modalidad: 'Virtual',
         incluye: ['Modalidad virtual', 'Certificado institucional', 'Material digital'],
         temario: [], publicado: true, orden: 1
     },
@@ -22,7 +22,7 @@ export const CURSOS_SEMILLA = [
         titulo: 'IA para Ingeniería Civil',
         subtitulo: 'Aplicaciones y casos prácticos de ingeniería',
         descripcion: 'Profundiza en el uso de Inteligencia Artificial mediante aplicaciones y casos prácticos de ingeniería.',
-        nivel: 'Intermedio', horas: null, precio: 120, modalidad: 'Virtual',
+        nivel: 'Intermedio', horas: null, precio: 500, modalidad: 'Virtual',
         incluye: ['Modalidad virtual', 'Certificado institucional', 'Casos prácticos'],
         temario: [], publicado: true, orden: 2
     }

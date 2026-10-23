@@ -308,12 +308,14 @@ create policy st_ver on storage.objects for select to authenticated
 
 insert into public.cursos (slug, titulo, subtitulo, descripcion, nivel, precio, modalidad, incluye, publicado, orden) values
  ('inteligencia-artificial-para-ingenieros','Inteligencia Artificial para Ingenieros','Desde cero hasta usarla en tu trabajo diario',
-  'Aprende desde cero a utilizar herramientas de Inteligencia Artificial para mejorar tu productividad profesional.','Básico',120,'Virtual',
+  'Aprende desde cero a utilizar herramientas de Inteligencia Artificial para mejorar tu productividad profesional.','Básico',500,'Virtual',
   array['Modalidad virtual','Certificado institucional','Material digital'],true,1),
  ('ia-para-ingenieria-civil','IA para Ingeniería Civil','Aplicaciones y casos prácticos de ingeniería',
-  'Profundiza en el uso de Inteligencia Artificial mediante aplicaciones y casos prácticos de ingeniería.','Intermedio',120,'Virtual',
+  'Profundiza en el uso de Inteligencia Artificial mediante aplicaciones y casos prácticos de ingeniería.','Intermedio',500,'Virtual',
   array['Modalidad virtual','Certificado institucional','Casos prácticos'],true,2)
 on conflict (slug) do nothing;
 
 -- Primer administrador: después de crear tu cuenta en el campus, ejecuta (con tu correo):
 --   update public.profiles set role = 'admin' where email = 'tu-correo@ejemplo.com';
+-- Si ya ejecutaste este archivo antes, actualiza los precios con:
+--   update public.cursos set precio = 500;
