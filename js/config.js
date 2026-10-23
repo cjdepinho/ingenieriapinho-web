@@ -10,7 +10,7 @@
 // archivo supabase/schema.sql. Nunca pegues aquí la clave "service_role".
 
 export const CONFIG = {
-    supabaseUrl: '',
+    supabaseUrl: 'https://dgasniewuhfbirpgjbqh.supabase.co',
     supabaseAnonKey: '',
 
     marca: {
