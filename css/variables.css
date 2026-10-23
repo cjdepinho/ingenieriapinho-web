@@ -1,0 +1,30 @@
+/* Ingeniería Pinho: variables de diseño
+   Lenguaje visual: plano de ingeniería (papel cuadriculado, ejes, cotas, membrete). */
+
+:root {
+    /* Color */
+    --tinta: #10243a;
+    --tinta-2: #3d5368;
+    --azul: #1b4f9c;
+    --azul-osc: #143c79;
+    --azul-cl: #2f7ed8;
+    --papel: #f5f8fb;
+    --papel-2: #e6eef6;
+    --linea: #c6d6e5;
+    --blanco: #ffffff;
+    --casco: #f4b400;
+    --cota: #c8372d;
+    --ok: #1f7a4d;
+    --aviso: #9a5b00;
+    --error: #b3261e;
+
+    /* Tipografía */
+    --f-titulo: 'Barlow Condensed', 'Arial Narrow', Arial, sans-serif;
+    --f-texto: 'Public Sans', system-ui, -apple-system, 'Segoe UI', Arial, sans-serif;
+
+    /* Forma */
+    --r-s: 4px;
+    --r-m: 8px;
+    --r-l: 14px;
+    --ancho: 1180px;
+}

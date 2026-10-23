@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verificar certificado | Ingeniería Pinho</title>
+    <meta name="description" content="Comprueba la autenticidad de un certificado de Ingeniería Pinho con su código.">
+    <link rel="icon" type="image/svg+xml" href="assets/logo.svg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Public+Sans:wght@400;500;600&display=swap">
+    <link rel="stylesheet" href="css/variables.css">
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/responsive.css">
+</head>
+<body>
+<header class="cabecera">
+    <div class="contenedor">
+        <a href="./" class="marca" aria-label="Ingeniería Pinho, inicio">
+            <img src="assets/logo.svg" alt="" width="38" height="38">
+            <span>Ingeniería <b>Pinho</b></span>
+        </a>
+        <nav class="menu" id="menu" aria-label="Principal">
+            <a href="./#cursos">Cursos</a>
+            <a href="campus/" class="boton peq">Campus virtual</a>
+        </nav>
+    </div>
+</header>
+
+<main class="interior">
+    <div class="contenedor">
+        <h1>Verificar un certificado</h1>
+        <p style="max-width:40rem;color:var(--tinta-2)">
+            Escribe el código que aparece en el certificado, o escanea su código QR.
+        </p>
+        <form class="verificador" id="form" style="max-width:36rem">
+            <label class="oculto-visual" for="codigo">Código del certificado</label>
+            <input id="codigo" type="text" placeholder="Ejemplo: PINHO-2026-ABC234" autocomplete="off" required>
+            <button class="boton" type="submit">Verificar</button>
+        </form>
+        <div id="resultado" aria-live="polite"></div>
+    </div>
+</main>
+
+<footer class="pie">
+    <div class="contenedor">
+        <div><strong>Ingeniería Pinho</strong><br>Inteligencia artificial aplicada a la ingeniería.</div>
+        <nav aria-label="Enlaces del pie"><a href="./">Inicio</a><a href="campus/">Campus virtual</a></nav>
+    </div>
+</footer>
+
+<script type="module" src="js/verificar.js"></script>
+</body>
+</html>

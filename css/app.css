@@ -1,0 +1,199 @@
+/* Ingeniería Pinho: campus del alumno y panel de administración */
+
+.app-cab {
+    background: #fff; border-bottom: 1px solid var(--linea);
+    position: sticky; top: 0; z-index: 30;
+}
+.app-cab .contenedor {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 1rem; min-height: 68px; flex-wrap: wrap;
+}
+.app-nav { display: flex; align-items: center; gap: 1.2rem; flex-wrap: wrap; }
+.app-nav a { text-decoration: none; color: var(--tinta); font-weight: 500; }
+.app-nav a:hover, .app-nav a.activo { color: var(--azul); }
+.app-nav button.enlace {
+    background: none; border: 0; font: 500 1rem var(--f-texto);
+    color: var(--tinta); cursor: pointer; padding: 0;
+}
+
+.app-principal { padding: 2.25rem 0 4rem; min-height: 70vh; }
+.app-principal h1 { font-size: clamp(2.2rem, 4vw, 3.1rem); margin-bottom: .4rem; }
+.app-principal h2 { font-size: 1.9rem; margin: 2.2rem 0 1rem; }
+.sub { color: var(--tinta-2); margin-bottom: 1.6rem; }
+.cargando { color: var(--tinta-2); padding: 2rem 0; }
+
+.panel {
+    background: #fff; border: 1px solid var(--linea); border-radius: var(--r-l);
+    padding: 1.3rem 1.4rem; margin-bottom: 1.2rem;
+}
+.panel h3 { font-size: 1.5rem; margin-bottom: .6rem; }
+
+.estrecho { max-width: 30rem; margin-inline: auto; }
+
+.aviso {
+    border-radius: var(--r-m); padding: .8rem 1rem; margin-bottom: 1rem;
+    background: var(--papel-2); border: 1px solid var(--linea);
+}
+.aviso.error { background: #fdecea; border-color: #f2b8b5; color: var(--error); }
+.aviso.ok { background: #e6f4ec; border-color: #a9d8bc; color: var(--ok); }
+
+/* ---------- Campus: cursos del alumno ---------- */
+
+.tarjetas { display: grid; gap: 1.2rem; grid-template-columns: repeat(auto-fill, minmax(min(100%, 20rem), 1fr)); }
+.tarjeta { background: #fff; border: 1px solid var(--linea); border-radius: var(--r-l); padding: 1.3rem; display: flex; flex-direction: column; gap: .6rem; }
+.tarjeta h3 { font-size: 1.6rem; }
+.tarjeta .pie-tarjeta { margin-top: auto; padding-top: .6rem; }
+
+.barra { height: 8px; background: var(--papel-2); border-radius: 99px; overflow: hidden; }
+.barra i { display: block; height: 100%; background: var(--azul); }
+
+.etiqueta {
+    display: inline-block; padding: .08rem .65rem; border-radius: 99px;
+    font-size: .8rem; font-weight: 600; background: var(--papel-2); color: var(--tinta);
+    white-space: nowrap;
+}
+.etiqueta.ok { background: #dcf0e5; color: var(--ok); }
+.etiqueta.aviso { background: #fbecd0; color: var(--aviso); }
+.etiqueta.error { background: #fbdedb; color: var(--error); }
+.etiqueta.info { background: #dbe8f8; color: var(--azul-osc); }
+
+/* ---------- Campus: lecciones ---------- */
+
+.aula { display: grid; grid-template-columns: 1fr 22rem; gap: 1.6rem; align-items: start; }
+
+.video { position: relative; aspect-ratio: 16 / 9; background: var(--tinta); border-radius: var(--r-m); overflow: hidden; }
+.video iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+.video .sin-video { position: absolute; inset: 0; display: grid; place-items: center; color: #cfdbe8; text-align: center; padding: 1rem; }
+
+.lecciones { list-style: none; margin: 0; padding: 0; }
+.lecciones li a {
+    display: flex; gap: .7rem; align-items: flex-start; padding: .7rem .9rem;
+    border-top: 1px solid var(--linea); text-decoration: none; color: var(--tinta);
+}
+.lecciones li:first-child a { border-top: 0; }
+.lecciones li a:hover { background: var(--papel); }
+.lecciones li a.actual { background: var(--papel-2); font-weight: 600; }
+.lecciones .marca-leccion {
+    flex: none; width: 1.3rem; height: 1.3rem; border: 2px solid var(--tinta-2);
+    border-radius: 50%; margin-top: .15rem;
+}
+.lecciones .hecha .marca-leccion { background: var(--ok); border-color: var(--ok); }
+
+.acciones { display: flex; gap: .7rem; flex-wrap: wrap; margin: 1rem 0; }
+
+/* ---------- Administración ---------- */
+
+.admin { display: grid; grid-template-columns: 15.5rem 1fr; min-height: 100vh; }
+
+.lateral {
+    background: var(--tinta); color: #fff; padding: 1.3rem 1rem;
+    position: sticky; top: 0; height: 100vh; overflow-y: auto;
+    display: flex; flex-direction: column; gap: .2rem;
+}
+.lateral .marca { color: #fff; font-size: 1.45rem; margin-bottom: 1.2rem; }
+.lateral .marca b { color: var(--casco); }
+.lateral a, .lateral button.enlace {
+    display: flex; align-items: center; justify-content: space-between; gap: .5rem;
+    color: #cfdbe8; text-decoration: none; padding: .55rem .75rem;
+    border-radius: var(--r-s); font: 500 .98rem var(--f-texto);
+    background: none; border: 0; cursor: pointer; text-align: left; width: 100%;
+}
+.lateral a:hover, .lateral button.enlace:hover { background: rgba(255, 255, 255, .08); color: #fff; }
+.lateral a.activo { background: var(--azul); color: #fff; }
+.lateral .contador { background: var(--casco); color: var(--tinta); border-radius: 99px; padding: 0 .5rem; font-size: .78rem; font-weight: 700; }
+.lateral .separador { margin: auto 0 0; }
+
+.admin-principal { padding: 1.8rem clamp(1rem, 3vw, 2.5rem) 4rem; min-width: 0; }
+.admin-principal h1 { font-size: clamp(2rem, 3.5vw, 2.8rem); margin-bottom: .3rem; }
+
+.barra-herramientas { display: flex; flex-wrap: wrap; gap: .6rem; align-items: center; margin: 1rem 0; }
+.barra-herramientas .espacio { flex: 1; }
+.barra-herramientas select, .barra-herramientas input { width: auto; }
+
+.kpis { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); margin: 1.2rem 0; }
+.kpi { background: #fff; border: 1px solid var(--linea); border-radius: var(--r-m); padding: 1rem 1.1rem; }
+.kpi small { color: var(--tinta-2); display: block; }
+.kpi b { font: 700 2.3rem var(--f-titulo); line-height: 1.1; display: block; }
+.kpi.ingreso b { color: var(--ok); }
+.kpi.gasto b { color: var(--error); }
+
+.tabla-caja { overflow-x: auto; background: #fff; border: 1px solid var(--linea); border-radius: var(--r-m); }
+table { width: 100%; border-collapse: collapse; font-size: .94rem; }
+th { text-align: left; background: var(--papel-2); padding: .6rem .8rem; font-weight: 600; white-space: nowrap; }
+td { padding: .6rem .8rem; border-top: 1px solid var(--linea); vertical-align: top; }
+td.num, th.num { text-align: right; white-space: nowrap; }
+td .acciones-fila { display: flex; gap: .4rem; flex-wrap: wrap; }
+.vacio { padding: 1.6rem; color: var(--tinta-2); text-align: center; }
+
+.rejilla-2 { display: grid; gap: 1.2rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 24rem), 1fr)); }
+
+.fila-barra { display: grid; grid-template-columns: 11rem 1fr 6.5rem; gap: .8rem; align-items: center; margin: .45rem 0; font-size: .92rem; }
+.fila-barra .barra i { background: var(--azul-cl); }
+.fila-barra.gasto .barra i { background: var(--cota); }
+
+/* ---------- Calendario ---------- */
+
+.cal-cab { display: flex; align-items: center; gap: 1rem; margin-bottom: .8rem; flex-wrap: wrap; }
+.cal-cab h3 { margin: 0; min-width: 12rem; }
+
+.calendario { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 1px; background: var(--linea); border: 1px solid var(--linea); }
+.cal-dia-nombre { background: var(--papel-2); padding: .4rem; font-weight: 600; font-size: .85rem; text-align: center; }
+.dia { background: #fff; min-height: 6rem; padding: .3rem .4rem; font-size: .82rem; cursor: pointer; text-align: left; border: 0; font-family: inherit; color: inherit; }
+.dia:hover { background: var(--papel); }
+.dia.fuera { background: var(--papel); color: #7d8fa1; }
+.dia.hoy .num { background: var(--casco); border-radius: 99px; padding: 0 .4rem; }
+.dia .num { font-weight: 600; display: inline-block; margin-bottom: .15rem; }
+.evento {
+    display: block; background: var(--azul); color: #fff; border-radius: 3px;
+    padding: 0 .3rem; margin-top: 2px; font-size: .75rem;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+.tablero { display: grid; gap: 1rem; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.columna { background: var(--papel-2); border-radius: var(--r-m); padding: .8rem; min-height: 8rem; }
+.columna h4 { font-size: 1.3rem; margin-bottom: .6rem; }
+.nota { background: #fff; border: 1px solid var(--linea); border-radius: var(--r-s); padding: .6rem .7rem; margin-bottom: .6rem; }
+.nota p { margin: .2rem 0; font-size: .9rem; }
+.nota .acciones-fila { display: flex; gap: .3rem; flex-wrap: wrap; margin-top: .4rem; }
+
+/* ---------- Ventanas y avisos ---------- */
+
+.modal-fondo {
+    position: fixed; inset: 0; background: rgba(16, 36, 58, .55);
+    display: grid; place-items: center; padding: 1rem; z-index: 100;
+}
+.modal {
+    background: #fff; border-radius: var(--r-l); width: min(100%, 38rem);
+    max-height: 92vh; overflow: auto; padding: 1.5rem;
+}
+.modal-titulo { font-size: 2rem; margin-bottom: 1rem; }
+.modal-acciones { display: flex; gap: .7rem; justify-content: flex-end; margin-top: 1.2rem; flex-wrap: wrap; }
+.modal .fila-campos { display: grid; gap: 0 1rem; grid-template-columns: 1fr 1fr; }
+.modal .campo.check { display: flex; align-items: center; gap: .6rem; }
+.modal .campo.check label { font-weight: 500; }
+
+.avisos { position: fixed; right: 1rem; bottom: 1rem; display: grid; gap: .5rem; z-index: 120; max-width: min(24rem, calc(100vw - 2rem)); }
+.aviso-flotante { background: var(--tinta); color: #fff; padding: .75rem 1rem; border-radius: var(--r-m); box-shadow: 0 6px 20px rgba(0, 0, 0, .25); }
+.aviso-flotante.error { background: var(--error); }
+.aviso-flotante.ok { background: var(--ok); }
+
+.nota-pie { font-size: .88rem; color: var(--tinta-2); margin-top: 1.6rem; }
+
+@media (max-width: 960px) {
+    .aula { grid-template-columns: 1fr; }
+    .tablero { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 860px) {
+    .admin { grid-template-columns: 1fr; }
+    .lateral {
+        position: static; height: auto; flex-direction: row; flex-wrap: wrap;
+        align-items: center; gap: .3rem; padding: .8rem;
+    }
+    .lateral .marca { width: 100%; margin-bottom: .4rem; }
+    .lateral a, .lateral button.enlace { width: auto; padding: .4rem .6rem; font-size: .92rem; }
+    .lateral .separador { margin: 0; }
+    .fila-barra { grid-template-columns: 7rem 1fr 5.5rem; }
+    .modal .fila-campos { grid-template-columns: 1fr; }
+    .dia { min-height: 4.2rem; }
+}

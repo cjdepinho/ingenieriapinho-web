@@ -1,0 +1,38 @@
+/* Ingeniería Pinho: adaptación a tablet y celular */
+
+@media (max-width: 960px) {
+    .portada-rejilla,
+    .dos-col,
+    .contacto-rejilla,
+    .detalle-rejilla { grid-template-columns: 1fr; gap: 2.25rem; }
+
+    .caja-matricula { position: static; }
+    .seccion { padding: 3.75rem 0; }
+}
+
+@media (max-width: 760px) {
+    .menu-boton { display: inline-block; }
+
+    .menu {
+        display: none; position: absolute; left: 0; right: 0; top: 100%;
+        flex-direction: column; align-items: stretch; gap: 0;
+        background: #fff; border-bottom: 1px solid var(--linea);
+        padding: .5rem 1rem 1rem;
+    }
+    .menu.abierto { display: flex; }
+    .menu a:not(.boton) { padding: .8rem .2rem; border-bottom: 1px solid var(--papel-2); }
+    .menu .boton { margin-top: .8rem; }
+
+    .cota-linea { grid-template-columns: 1fr; border-top: 0; border-left: 2px solid var(--tinta); }
+    .cota-linea::after { display: none; }
+    .cota-linea > div { padding: 0 0 1.6rem 1.4rem; }
+    .cota-linea > div::before { top: 0; left: -10px; width: 18px; height: 2px; }
+
+    .membrete { grid-template-columns: 1fr 1fr; }
+    .membrete div:nth-child(3) { border-left: 0; }
+    .membrete div:nth-child(n+3) { border-top: 1px solid var(--tinta); }
+
+    .curso-datos { grid-template-columns: 1fr 1fr 1fr; font-size: .82rem; }
+    .portada { padding: 2.25rem 0 3rem; }
+    .lamina { box-shadow: 5px 5px 0 var(--papel-2); }
+}

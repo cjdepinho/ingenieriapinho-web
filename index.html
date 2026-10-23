@@ -1,274 +1,312 @@
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
-
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ingeniería Pinho: inteligencia artificial para ingenieros</title>
+    <meta name="description" content="Cursos virtuales de inteligencia artificial aplicada a la ingeniería: diseño, construcción y gestión de proyectos, con certificado verificable.">
+    <meta name="author" content="Ingeniería Pinho">
+    <link rel="canonical" href="https://ingenieriapinho.com/">
+    <link rel="icon" type="image/svg+xml" href="assets/logo.svg">
 
-    <meta name="viewport"
-          content="width=device-width, initial-scale=1.0">
+    <meta property="og:type" content="website">
+    <meta property="og:locale" content="es_PE">
+    <meta property="og:title" content="Ingeniería Pinho: inteligencia artificial para ingenieros">
+    <meta property="og:description" content="Cursos virtuales de IA aplicada a la ingeniería, con certificado verificable.">
+    <meta property="og:url" content="https://ingenieriapinho.com/">
+    <meta property="og:image" content="https://ingenieriapinho.com/assets/images/hero.png">
 
-    <title>Ingeniería Pinho</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Public+Sans:wght@400;500;600&display=swap">
+    <link rel="stylesheet" href="css/variables.css">
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/responsive.css">
 
-    <meta name="description"
-          content="Academia de Inteligencia Artificial aplicada a la Ingeniería.">
-
-    <meta name="author"
-          content="Ingeniería Pinho">
-
-    <link rel="stylesheet"
-          href="css/variables.css">
-
-    <link rel="stylesheet"
-          href="css/styles.css">
-
-    <link rel="stylesheet"
-          href="css/responsive.css">
-
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "EducationalOrganization",
+        "name": "Ingeniería Pinho",
+        "url": "https://ingenieriapinho.com/",
+        "logo": "https://ingenieriapinho.com/assets/logo.svg",
+        "description": "Academia de inteligencia artificial aplicada a la ingeniería."
+    }
+    </script>
 </head>
 
 <body>
-<header class="header">
+<a class="saltar" href="#contenido">Saltar al contenido</a>
 
-    <div class="container">
-
-        <a href="#" class="logo">
-            Ingeniería <span>Pinho</span>
+<header class="cabecera">
+    <div class="contenedor">
+        <a href="./" class="marca" aria-label="Ingeniería Pinho, inicio">
+            <img src="assets/logo.svg" alt="" width="38" height="38">
+            <span>Ingeniería <b>Pinho</b></span>
         </a>
 
-        <nav class="menu">
+        <button class="menu-boton" id="menu-boton" aria-expanded="false" aria-controls="menu">Menú</button>
 
-            <a href="#">Inicio</a>
-            <a href="#">Cursos</a>
-            <a href="#">Filosofía</a>
-            <a href="#">Contacto</a>
-
+        <nav class="menu" id="menu" aria-label="Principal">
+            <a href="#cursos">Cursos</a>
+            <a href="#certificacion">Certificación</a>
+            <a href="#filosofia">Filosofía</a>
+            <a href="#instructor">Instructor</a>
+            <a href="#contacto">Contacto</a>
+            <a href="campus/" class="boton peq">Campus virtual</a>
         </nav>
-
     </div>
-
 </header>
-<section class="hero">
 
-    <div class="container hero-container">
+<main id="contenido">
 
-        <div class="hero-text">
-
-            <span class="hero-badge">
-                IA aplicada a la Ingeniería
-            </span>
-
-            <h1>
-                Impulsa tu carrera con
-                <span>Inteligencia Artificial</span>
-            </h1>
-
-            <p>
-                Aprende a integrar Inteligencia Artificial en el diseño,
-                la construcción y la gestión de proyectos mediante casos
-                reales y herramientas profesionales.
-            </p>
-
-            <ul class="hero-features">
-                <li>✔ Casos reales</li>
-                <li>✔ Enfoque práctico</li>
-                <li>✔ Certificado institucional</li>
-            </ul>
-
-            <div class="hero-buttons">
-
-                <a href="#" class="btn">
-                    Explorar Cursos
-                </a>
-
+    <section class="portada">
+        <div class="contenedor portada-rejilla">
+            <div>
+                <h1>Usa la inteligencia artificial sin perder el criterio de ingeniero</h1>
+                <p class="entrada">
+                    Cursos virtuales para integrar la IA en el diseño, la construcción y la gestión
+                    de proyectos, con casos reales y herramientas profesionales.
+                </p>
+                <div class="botones">
+                    <a href="#cursos" class="boton casco">Ver los cursos</a>
+                    <a href="campus/" class="boton sec">Entrar al campus</a>
+                </div>
             </div>
 
-        </div>
+            <figure class="lamina" style="margin:0">
+                <svg class="dibujo" viewBox="0 0 640 404" role="img"
+                     aria-label="Dibujo lineal de un puente atirantado con ejes A y B y una cota de luz principal">
+                    <!-- Ejes -->
+                    <line class="eje" x1="190" y1="44" x2="190" y2="376"/>
+                    <line class="eje" x1="450" y1="44" x2="450" y2="376"/>
+                    <circle class="burbuja" cx="190" cy="28" r="15"/>
+                    <circle class="burbuja" cx="450" cy="28" r="15"/>
+                    <text x="190" y="33" text-anchor="middle" font-weight="600">A</text>
+                    <text x="450" y="33" text-anchor="middle" font-weight="600">B</text>
+                    <text x="20" y="32">Elevación, ejes A y B</text>
 
-        <div class="hero-image">
+                    <!-- Terreno -->
+                    <line class="suelo" x1="20" y1="340" x2="620" y2="340"/>
+                    <path class="suelo" d="M166 340l-9 11M174 340l-9 11M182 340l-9 11M190 340l-9 11M198 340l-9 11M206 340l-9 11M214 340l-9 11
+                                            M426 340l-9 11M434 340l-9 11M442 340l-9 11M450 340l-9 11M458 340l-9 11M466 340l-9 11M474 340l-9 11"/>
 
-            <img src="assets/images/hero.png"
-                 alt="Ingeniería e Inteligencia Artificial">
+                    <!-- Estructura -->
+                    <path class="estructura trazo" pathLength="1" d="M20 258H620M20 270H620"/>
+                    <rect class="estructura trazo" pathLength="1" x="181" y="70" width="18" height="270"/>
+                    <rect class="estructura trazo" pathLength="1" x="441" y="70" width="18" height="270"/>
 
-        </div>
+                    <!-- Cables -->
+                    <path class="cable trazo tarde" pathLength="1"
+                          d="M190 84L30 258M190 100L70 258M190 116L110 258M190 132L150 258
+                             M190 100L315 258M190 116L275 258M190 132L235 258
+                             M450 100L325 258M450 116L365 258M450 132L405 258
+                             M450 84L610 258M450 100L570 258M450 116L530 258M450 132L490 258"/>
 
-    </div>
+                    <!-- Nodos -->
+                    <circle class="nodo" cx="190" cy="70" r="7"/>
+                    <circle class="nodo" cx="450" cy="70" r="7"/>
+                    <circle class="nodo" cx="70" cy="258" r="5"/>
+                    <circle class="nodo" cx="150" cy="258" r="5"/>
+                    <circle class="nodo" cx="235" cy="258" r="5"/>
+                    <circle class="nodo" cx="315" cy="258" r="5"/>
+                    <circle class="nodo" cx="325" cy="258" r="5"/>
+                    <circle class="nodo" cx="405" cy="258" r="5"/>
+                    <circle class="nodo" cx="490" cy="258" r="5"/>
+                    <circle class="nodo" cx="570" cy="258" r="5"/>
 
-</section>
-<!--==================================================
-    BENEFICIOS
-===================================================-->
+                    <!-- Cota -->
+                    <path class="cota" d="M190 384H450M184 390l12-12M444 390l12-12"/>
+                    <text class="cota-texto" x="320" y="378" text-anchor="middle">L = 260.00 m</text>
+                </svg>
 
-<section class="benefits">
-
-    <div class="container">
-
-        <h2>¿Por qué elegir Ingeniería Pinho?</h2>
-
-        <p class="section-description">
-            Aprende con una metodología práctica, moderna y orientada
-            a resultados para la ingeniería.
-        </p>
-
-        <div class="benefits-grid">
-
-            <article class="benefit-card">
-
-                <div class="benefit-icon">🤖</div>
-
-                <h3>IA Aplicada</h3>
-
-                <p>
-                    Aprende a utilizar herramientas de Inteligencia Artificial
-                    para optimizar procesos y aumentar tu productividad profesional.
-                </p>
-
-            </article>
-
-            <article class="benefit-card">
-
-                <div class="benefit-icon">🏗️</div>
-
-                <h3>Aprendizaje Práctico</h3>
-
-                <p>
-                    Desarrolla tus habilidades mediante ejercicios y proyectos
-                    inspirados en situaciones reales de la ingeniería civil.
-                </p>
-
-            </article>
-
-            <article class="benefit-card">
-
-                <div class="benefit-icon">🎓</div>
-
-                <h3>Certificación</h3>
-
-                <p>
-                    Obtén un certificado institucional al finalizar
-                    satisfactoriamente cada curso.
-                </p>
-
-            </article>
-
-        </div>
-
-    </div>
-
-</section>
-<!--==================================================
-    CURSOS
-===================================================-->
-
-<section class="courses">
-
-    <div class="container">
-
-        <h2>Nuestros Cursos</h2>
-
-        <p class="section-description">
-            Formación especializada en Inteligencia Artificial aplicada a la ingeniería.
-        </p>
-
-        <div class="courses-grid">
-
-            <!-- CURSO 1 -->
-
-            <article class="course-card">
-
-                <div class="course-top"></div>
-
-                <span class="course-level">
-                    Nivel Básico
-                </span>
-
-                <h3>
-                    Inteligencia Artificial<br>
-                    para Ingenieros
-                </h3>
-
-                <p>
-                    Aprende desde cero a utilizar herramientas de Inteligencia Artificial para mejorar tu productividad profesional.
-                </p>
-
-                <ul>
-
-                    <li>✔ Modalidad virtual</li>
-
-                    <li>✔ Certificado institucional</li>
-
-                    <li>✔ Material digital</li>
-
-                </ul>
-
-                <div class="course-divider"></div>
-
-                <div class="course-price">
-
-                    S/ 120
-
+                <div class="membrete">
+                    <div><small>Cursos</small><strong>IA para ingeniería</strong></div>
+                    <div><small>Instructor</small><strong>Ing. Carlos J. Jerí De Pinho</strong></div>
+                    <div><small>Modalidad</small><strong>Virtual</strong></div>
+                    <div><small>Certificado</small><strong>Con código QR</strong></div>
                 </div>
-
-                <a href="#" class="course-button">
-
-                    Ver detalles
-
-                </a>
-
-            </article>
-
-
-            <!-- CURSO 2 -->
-
-            <article class="course-card">
-
-                <div class="course-top"></div>
-
-                <span class="course-level">
-                    Nivel Intermedio
-                </span>
-
-                <h3>
-                    IA para<br>
-                    Ingeniería Civil
-                </h3>
-
-                <p>
-                    Profundiza en el uso de Inteligencia Artificial mediante aplicaciones y casos prácticos de ingeniería.
-                </p>
-
-                <ul>
-
-                    <li>✔ Modalidad virtual</li>
-
-                    <li>✔ Certificado institucional</li>
-
-                    <li>✔ Casos prácticos</li>
-
-                </ul>
-
-                <div class="course-divider"></div>
-
-                <div class="course-price">
-
-                    S/ 120
-
-                </div>
-
-                <a href="#" class="course-button">
-
-                    Ver detalles
-
-                </a>
-
-            </article>
-
+            </figure>
         </div>
+    </section>
 
+    <section class="seccion">
+        <div class="contenedor">
+            <div class="encabezado">
+                <h2>Tres áreas del trabajo del ingeniero</h2>
+                <p>Cada curso parte de tareas reales del proyecto y enseña a resolverlas con IA, verificando el resultado.</p>
+            </div>
+            <div class="cota-linea">
+                <div>
+                    <h3>Diseño</h3>
+                    <p>Apoya el análisis y la toma de decisiones técnicas con herramientas de IA, sin delegar el criterio.</p>
+                </div>
+                <div>
+                    <h3>Construcción</h3>
+                    <p>Aplica la IA al seguimiento de obra, al control de calidad y a la documentación técnica.</p>
+                </div>
+                <div>
+                    <h3>Gestión</h3>
+                    <p>Ordena cronogramas, informes y comunicaciones del proyecto con método y menos tiempo.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="seccion alt" id="cursos">
+        <div class="contenedor">
+            <div class="encabezado">
+                <h2>Cursos</h2>
+                <p>Formación virtual en inteligencia artificial aplicada a la ingeniería.</p>
+            </div>
+            <div class="cursos-rejilla" id="lista-cursos" aria-live="polite">
+                <p>Cargando cursos…</p>
+            </div>
+            <noscript><p>Activa JavaScript para ver los cursos disponibles.</p></noscript>
+        </div>
+    </section>
+
+    <section class="seccion" id="como">
+        <div class="contenedor">
+            <div class="encabezado">
+                <h2>Cómo te matriculas</h2>
+            </div>
+            <ol class="pasos">
+                <li>
+                    <h3>Elige tu curso y crea tu cuenta</h3>
+                    <p>Regístrate en el campus con tu correo. Es gratis y toma un minuto.</p>
+                </li>
+                <li>
+                    <h3>Paga y sube tu comprobante</h3>
+                    <p>Puedes pagar por Yape, Plin o transferencia. Subes la captura del pago en el mismo formulario.</p>
+                </li>
+                <li>
+                    <h3>Activamos tu acceso</h3>
+                    <p>Validamos el pago y habilitamos el curso en tu cuenta.</p>
+                </li>
+                <li>
+                    <h3>Estudia y recibe tu certificado</h3>
+                    <p>Mira las clases, descarga el material y, al terminar, recibe tu certificado con código de verificación.</p>
+                </li>
+            </ol>
+        </div>
+    </section>
+
+    <section class="seccion alt" id="certificacion">
+        <div class="contenedor dos-col">
+            <div>
+                <h2>Un certificado que cualquiera puede comprobar</h2>
+                <p style="margin-top:1rem;color:var(--tinta-2);font-size:1.12rem">
+                    Cada certificado lleva un código único y un código QR. Quien lo reciba puede confirmar
+                    en esta página que es auténtico, a nombre de quién está y qué curso completó.
+                </p>
+                <form class="verificador" id="form-verificar" action="verificar.html" method="get">
+                    <label class="oculto-visual" for="codigo-verificar">Código del certificado</label>
+                    <input id="codigo-verificar" name="c" type="text" placeholder="Ejemplo: PINHO-2026-ABC234" autocomplete="off" required>
+                    <button class="boton" type="submit">Verificar certificado</button>
+                </form>
+            </div>
+            <div class="mini-certificado" aria-hidden="true">
+                <div>
+                    <div class="titulo">Certificado de finalización</div>
+                    <div class="raya corta"></div>
+                    <div class="raya"></div>
+                    <div class="raya"></div>
+                </div>
+                <div class="pie">
+                    <span>Código único y fecha de emisión</span>
+                    <span class="qr"></span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="seccion" id="filosofia">
+        <div class="contenedor">
+            <div class="encabezado">
+                <h2>La herramienta cambia; el criterio sigue siendo tuyo</h2>
+            </div>
+            <div class="dos-col" style="align-items:start">
+                <p>
+                    La inteligencia artificial acelera tareas, pero no firma planos ni responde por una obra.
+                    Por eso cada curso enseña a usarla con método: formular bien la consulta, verificar los
+                    resultados y contrastarlos con la norma antes de decidir.
+                </p>
+                <p>
+                    El objetivo no es que dependas de una herramienta, sino que tu trabajo profesional
+                    sea más ordenado, mejor documentado y más rápido, con la responsabilidad en quien corresponde.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <section class="seccion alt" id="instructor">
+        <div class="contenedor dos-col">
+            <div class="ficha">
+                <div><small>Instructor</small><strong>Ing. Carlos J. Jerí De Pinho</strong></div>
+                <div><small>Colegiatura</small><strong>CIP 108121</strong></div>
+                <div><small>Especialidad</small><strong>Estructuras y gerencia de proyectos</strong></div>
+                <div><small>Experiencia</small><strong>Inspección y gestión de obras de infraestructura pública</strong></div>
+            </div>
+            <div>
+                <h2>Quién dicta los cursos</h2>
+                <p style="margin-top:1rem">
+                    Ingeniero colegiado, gerente de proyectos e inspector de obras de infraestructura pública,
+                    con formación en estructuras. Diseña cada curso a partir de problemas que se repiten en obra
+                    y en la revisión de expedientes.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <section class="seccion" id="contacto">
+        <div class="contenedor contacto-rejilla">
+            <div>
+                <h2>Escríbenos</h2>
+                <p style="margin-top:1rem;color:var(--tinta-2)">
+                    Consultas sobre los cursos, matrículas para equipos o capacitaciones a medida.
+                </p>
+                <ul class="contacto-medios" id="medios-contacto"></ul>
+            </div>
+            <form id="form-contacto" novalidate>
+                <div class="campo">
+                    <label for="c-nombre">Nombre</label>
+                    <input id="c-nombre" name="nombre" type="text" autocomplete="name" required maxlength="120">
+                </div>
+                <div class="campo">
+                    <label for="c-email">Correo electrónico</label>
+                    <input id="c-email" name="email" type="email" autocomplete="email" required maxlength="160">
+                </div>
+                <div class="campo">
+                    <label for="c-mensaje">Mensaje</label>
+                    <textarea id="c-mensaje" name="mensaje" required minlength="5" maxlength="2000"></textarea>
+                </div>
+                <div class="trampa" aria-hidden="true">
+                    <label for="c-empresa">No completar este campo</label>
+                    <input id="c-empresa" name="empresa" type="text" tabindex="-1" autocomplete="off">
+                </div>
+                <button class="boton" type="submit" id="enviar-contacto">Enviar mensaje</button>
+                <p id="estado-contacto" role="status" style="margin-top:1rem"></p>
+            </form>
+        </div>
+    </section>
+</main>
+
+<footer class="pie">
+    <div class="contenedor">
+        <div>
+            <strong>Ingeniería Pinho</strong><br>
+            Inteligencia artificial aplicada a la ingeniería.<br>
+            <span id="anio"></span> Ingeniería Pinho. Todos los derechos reservados.
+        </div>
+        <nav aria-label="Enlaces del pie">
+            <a href="campus/">Campus virtual</a>
+            <a href="verificar.html">Verificar certificado</a>
+            <a href="#contacto">Contacto</a>
+        </nav>
     </div>
+</footer>
 
-</section>
-
+<script type="module" src="js/site.js"></script>
 </body>
-
 </html>

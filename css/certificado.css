@@ -1,0 +1,31 @@
+.pagina-certificado{background:#e9edf2;margin:0}
+.barra-imprimir{display:flex;gap:.6rem;justify-content:center;padding:1rem}
+.hoja-contenedor{display:flex;justify-content:center;padding:0 1rem 2rem;overflow-x:auto}
+.hoja{width:297mm;height:210mm;background:#fff;color:var(--tinta);position:relative;box-sizing:border-box;padding:14mm 18mm;
+  border:1.5mm solid var(--azul);outline:.4mm solid var(--azul);outline-offset:-3.4mm;display:flex;flex-direction:column;
+  font-family:var(--f-texto);box-shadow:0 2px 14px rgba(0,0,0,.15);flex:none}
+.hoja .cab{display:flex;align-items:center;gap:4mm}
+.hoja .cab img{width:16mm;height:16mm}
+.hoja .cab b{font-family:var(--f-titulo);font-size:8mm;letter-spacing:.02em;display:block;line-height:1}
+.hoja .cab small{color:var(--tinta-2);font-size:3.4mm}
+.hoja .centro{flex:1;display:flex;flex-direction:column;justify-content:center;text-align:center;gap:3mm}
+.hoja .tipo{font-family:var(--f-titulo);font-size:13mm;text-transform:none;line-height:1}
+.hoja .otorga{color:var(--tinta-2);font-size:4mm}
+.hoja .nombre{font-family:var(--f-titulo);font-size:17mm;line-height:1.05;border-bottom:.4mm solid var(--azul);display:inline-block;align-self:center;padding:0 8mm 1mm}
+.hoja .c-nombre{font-size:6.2mm;font-weight:600}
+.hoja .detalle{color:var(--tinta-2);font-size:4mm}
+.hoja .pie-cert{display:flex;justify-content:space-between;align-items:flex-end;gap:8mm}
+.hoja .firma{text-align:center;font-size:3.6mm;min-width:70mm}
+.hoja .firma i{display:block;border-top:.3mm solid var(--tinta);margin-bottom:1mm}
+.hoja .verif{display:flex;gap:3mm;align-items:center;font-size:3.2mm;color:var(--tinta-2);text-align:right}
+.hoja .verif svg{width:24mm;height:24mm}
+.hoja .avales{display:flex;gap:6mm;justify-content:center;align-items:center}
+.hoja .avales img{max-height:12mm}
+@media print{
+  @page{size:A4 landscape;margin:0}
+  .no-imprimir{display:none!important}
+  .pagina-certificado{background:#fff}
+  .hoja-contenedor{padding:0;display:block;overflow:visible}
+  .hoja{box-shadow:none}
+}
+@media (max-width:900px){.hoja{transform-origin:top left}}
