@@ -10,8 +10,8 @@ values (
   'IA para Civil 3D con Claude',
   'Tu equipo de agentes de IA para proyectos viales',
   'Curso 100 % práctico: arma un sistema multiagente con Claude y úsalo en Civil 3D para limpiar datos topográficos, diseñar y revisar una vía, calcular volúmenes y automatizar reportes.',
-  'Intermedio', 4, 500, 'Virtual',
-  array['4 horas de formación virtual en 6 módulos 100 % prácticos','Presentaciones de cada módulo','Instrucciones de cada agente y scripts de ejemplo','Práctica guiada en Civil 3D en cada módulo','Certificado de 4 horas con código QR verificable'],
+  'Intermedio', 4, 500, 'En vivo',
+  array['4 horas de curso en vivo en 6 módulos 100 % prácticos','Grabación de cada clase en el campus para repasar cuando quieras','Presentaciones de cada módulo','Instrucciones de cada agente y scripts de ejemplo','Práctica guiada en Civil 3D en cada módulo','Certificado de 4 horas con código QR verificable'],
   array['Tu equipo de agentes: coordinador y especialistas, y cómo trabajan juntos (30 min)','Agente Topógrafo: del archivo de puntos a una superficie verificada en Civil 3D (45 min)','Agente Diseñador Vial: alineamiento, perfil y tabla de cumplimiento de criterios (45 min)','Agente Cubicador: corredor, secciones y verificación independiente de volúmenes (45 min)','Agente Automatizador: scripts, tablas y reportes que ahorran horas de trabajo (45 min)','Agente Revisor e integración: control de calidad y proyecto integrador de punta a punta (30 min)'],
   true, 3
 )
