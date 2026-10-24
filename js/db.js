@@ -13,18 +13,18 @@ export const CURSOS_SEMILLA = [
         titulo: 'Inteligencia Artificial para Ingenieros',
         subtitulo: 'Desde cero hasta usarla en tu trabajo diario',
         descripcion: 'Aprende desde cero a utilizar herramientas de Inteligencia Artificial para mejorar tu productividad profesional.',
-        nivel: 'Básico', horas: null, precio: 500, modalidad: 'Virtual',
-        incluye: ['Modalidad virtual', 'Certificado institucional', 'Material digital'],
-        temario: [], publicado: true, orden: 1
+        nivel: 'Básico', horas: 6, precio: 500, modalidad: 'Virtual',
+        incluye: ["6 horas de formación virtual en 6 clases de 1 hora", "Presentaciones de cada clase", "Guía de trabajo con ejercicios prácticos", "Casos y ejercicios aplicados a ingeniería", "Certificado de 6 horas con código QR verificable"],
+        temario: ["Fundamentos de la IA generativa y sus límites: qué hace, dónde falla y cómo reconocer una alucinación", "Cómo pedir bien: el método Rol, Contexto, Tarea, Formato y Criterios, e iteración", "Documentos técnicos: resumir normas y contratos; redactar cartas, informes y actas", "Datos y cálculos: tablas, hojas de cálculo, código y revisión de unidades y totales", "Verificación, criterio profesional, trazabilidad y confidencialidad de la información", "Tu flujo de trabajo y proyecto final: documento técnico asistido y verificado"], publicado: true, orden: 1
     },
     {
         slug: 'ia-para-ingenieria-civil',
         titulo: 'IA para Ingeniería Civil',
         subtitulo: 'Aplicaciones y casos prácticos de ingeniería',
         descripcion: 'Profundiza en el uso de Inteligencia Artificial mediante aplicaciones y casos prácticos de ingeniería.',
-        nivel: 'Intermedio', horas: null, precio: 500, modalidad: 'Virtual',
-        incluye: ['Modalidad virtual', 'Certificado institucional', 'Casos prácticos'],
-        temario: [], publicado: true, orden: 2
+        nivel: 'Intermedio', horas: 6, precio: 500, modalidad: 'Virtual',
+        incluye: ["6 horas de formación virtual en 6 clases de 1 hora", "Presentaciones de cada clase", "Guía de trabajo con ejercicios prácticos", "Casos prácticos de ingeniería civil", "Certificado de 6 horas con código QR verificable"],
+        temario: ["Prediseño y comparación de alternativas con matriz multicriterio", "Memorias de cálculo y verificación: hipótesis, cargas y scripts en Python", "Metrados, presupuestos y cronogramas: partidas, APU, ruta crítica y curva S", "Inspección y supervisión: informes de campo, cuaderno de obra, ensayos y no conformidades", "Gestión contractual y documental: cartas, ampliaciones de plazo y adicionales", "Casos integrados y proyecto final"], publicado: true, orden: 2
     }
 ];
 
