@@ -1,6 +1,7 @@
 // Panel de administración: cursos, matrículas y pagos, certificados, planificación, contabilidad y ajustes.
 
 import { db, modo } from './db.js';
+import { RECETAS, armarSQL } from './recetas-sql.js';
 import { $, h, aviso, soles, hoyISO, fechaCorta, mesEtiqueta, MESES, crearSlug, generarCodigo, mensajeError,
          confirmar, pedirFormulario, formulario, abrirModal, tabla, descargarCSV, etiquetaEstado, bannerDemo } from './ui.js';
 
@@ -13,7 +14,7 @@ let filtroMat = 'pendiente';
 const SECCIONES = [
     ['resumen', 'Resumen'], ['cursos', 'Cursos y clases'], ['matriculas', 'Matrículas y pagos'], ['alumnos', 'Alumnos'],
     ['certificados', 'Certificados'], ['planificacion', 'Planificación'], ['contabilidad', 'Contabilidad'],
-    ['consultas', 'Consultas'], ['ajustes', 'Ajustes']];
+    ['consultas', 'Consultas'], ['sql', 'Consola SQL'], ['ajustes', 'Ajustes']];
 
 const CATEGORIAS = ['Matrículas', 'Publicidad', 'Plataforma y herramientas', 'Honorarios', 'Impuestos y tasas', 'Otros'];
 const linea = (t) => String(t || '').split('\n').map((x) => x.trim()).filter(Boolean);
@@ -276,6 +277,90 @@ async function ajustes(cnt) {
             h('button', { class: 'boton peligro', onClick: async () => { if (await confirmar('¿Borrar los datos de demostración?', 'Borrar', true)) { db.reiniciarDemo(); location.href = '../campus/'; } } }, 'Reiniciar demostración')) : null);
 }
 
+
+// ---------- Consola SQL ----------
+let ultimoSQL = '';
+let ultimoResultado = null;
+
+const dividirSQL = (texto) => texto.split(/;[ \t]*(?:\r?\n|$)/).map((q) => q.trim()).filter(Boolean);
+const modifica = (q) => !/^(select|with|values)\b/i.test(q.trim());
+
+function pintarResultados(caja, resultado, sentencias) {
+    ultimoResultado = null;
+    const bloques = resultado.map((r, i) => {
+        if (r.tipo === 'comando') return h('div', { class: 'aviso ok' }, `Instrucción ${i + 1}: se afectaron ${r.afectadas} fila(s).`);
+        const filas = r.filas || [];
+        if (!filas.length) return h('div', { class: 'aviso' }, `Consulta ${i + 1}: sin resultados.`);
+        const cols = Object.keys(filas[0]);
+        const texto = (v) => (v === null || v === undefined ? '' : typeof v === 'object' ? JSON.stringify(v) : String(v));
+        ultimoResultado = [cols, ...filas.map((f) => cols.map((c) => texto(f[c])))];
+        return h('div', {},
+            h('p', { class: 'sub' }, `${filas.length} fila(s)${filas.length >= 500 ? ' (se muestran las primeras 500)' : ''}`),
+            tabla(cols.map((c) => ({ t: c, f: (f) => texto(f[c]) })), filas));
+    });
+    const csv = ultimoResultado ? h('button', { class: 'boton sec peq', onClick: () => descargarCSV('consulta.csv', ultimoResultado) }, 'Exportar CSV') : null;
+    caja.replaceChildren(csv, ...bloques);
+}
+
+async function consolaSQL(cnt) {
+    const editor = h('textarea', { id: 'sql-editor', rows: 12, spellcheck: 'false', placeholder: 'Escribe una consulta o elige una receta de la lista…',
+        style: 'width:100%;font-family:ui-monospace,Consolas,monospace;font-size:.9rem;line-height:1.45' });
+    editor.value = ultimoSQL;
+    const salida = h('div', { id: 'sql-salida', style: 'margin-top:1rem' });
+    const ejecutar = h('button', { class: 'boton', type: 'button' }, 'Ejecutar');
+
+    const elegir = async (rec) => {
+        let valores = {};
+        if (rec.params && rec.params.length) {
+            valores = await pedirFormulario({ titulo: rec.titulo, textoGuardar: 'Cargar receta', nota: rec.detalle,
+                campos: rec.params.map((p) => ({ n: p.n, l: p.l, t: p.t === 'number' ? 'number' : 'text', req: true, paso: p.t === 'number' ? '0.01' : undefined })),
+                valores: Object.fromEntries(rec.params.map((p) => [p.n, p.v])) });
+            if (!valores) return;
+        }
+        try { editor.value = armarSQL(rec, valores); } catch (e) { return aviso(mensajeError(e), 'error'); }
+        ultimoSQL = editor.value;
+        salida.replaceChildren(rec.modifica
+            ? h('div', { class: 'aviso' }, 'Esta receta modifica datos. Revisa el texto y pulsa Ejecutar para confirmarla.')
+            : h('div', { class: 'aviso' }, 'Receta cargada. Pulsa Ejecutar.'));
+        editor.focus();
+    };
+
+    ejecutar.addEventListener('click', async () => {
+        const sentencias = dividirSQL(editor.value);
+        if (!sentencias.length) return aviso('Escribe una consulta o elige una receta.', 'error');
+        ultimoSQL = editor.value;
+        if (sentencias.some(modifica)) {
+            const n = sentencias.filter(modifica).length;
+            if (!await confirmar(`Vas a ejecutar ${n} instrucción(es) que modifican datos. No se pueden deshacer. ¿Continuar?`, 'Ejecutar', true)) return;
+        }
+        ejecutar.disabled = true;
+        salida.replaceChildren(h('p', { class: 'cargando' }, 'Ejecutando…'));
+        try {
+            const resultado = await db.rpc('admin_sql', { p_consultas: sentencias });
+            pintarResultados(salida, resultado, sentencias);
+        } catch (e) {
+            const msg = mensajeError(e);
+            const falta = /admin_sql|Could not find the function|schema cache/i.test(msg);
+            salida.replaceChildren(h('div', { class: 'aviso error' }, falta
+                ? 'La consola aún no está activada en tu base de datos. Ejecuta el archivo supabase/admin_sql.sql en el SQL Editor de Supabase.'
+                : `Error: ${msg}`));
+        } finally { ejecutar.disabled = false; }
+    });
+
+    const lista = RECETAS.map((g) => h('div', { class: 'panel', style: 'padding:.9rem 1rem' },
+        h('h3', { style: 'margin:0 0 .5rem' }, g.grupo),
+        g.items.map((r) => h('button', { class: `boton sec peq ${r.modifica ? '' : ''}`, type: 'button', title: r.detalle,
+            style: 'display:block;width:100%;text-align:left;margin-bottom:.35rem', onClick: () => elegir(r) }, r.titulo))));
+
+    marco('sql', cnt, h('h1', {}, 'Consola SQL'),
+        h('p', { class: 'sub' }, 'Elige una receta o escribe tu propia consulta. Se ejecuta con tus permisos de administrador; no puede crear ni borrar tablas.'),
+        modo === 'demo' ? h('div', { class: 'aviso' }, 'La consola solo funciona conectada a Supabase.') : null,
+        h('div', { class: 'rejilla-2', style: 'grid-template-columns:minmax(220px,1fr) 2fr;align-items:start' },
+            h('div', {}, lista),
+            h('div', {}, editor, h('div', { class: 'acciones', style: 'margin-top:.6rem' }, ejecutar,
+                h('button', { class: 'boton sec', type: 'button', onClick: () => { editor.value = ''; ultimoSQL = ''; salida.replaceChildren(); } }, 'Limpiar')), salida)));
+}
+
 // ---------- Enrutador ----------
 async function render() {
     try {
@@ -284,7 +369,7 @@ async function render() {
         if (sesion.perfil.role !== 'admin') return raiz.replaceChildren(h('main', { class: 'app-principal contenedor' }, h('h1', {}, 'Acceso restringido'), h('p', {}, 'Tu cuenta no tiene permisos de administración.'), h('a', { class: 'boton', href: '../campus/' }, 'Volver al campus')));
         const cnt = await contadores();
         const [, ruta = 'resumen', id] = location.hash.split('/');
-        const mapa = { resumen, cursos, matriculas, alumnos, certificados, planificacion, contabilidad, consultas, ajustes };
+        const mapa = { resumen, cursos, matriculas, alumnos, certificados, planificacion, contabilidad, consultas, sql: consolaSQL, ajustes };
         if (ruta === 'clases') return await clases(cnt, id);
         return await (mapa[ruta] || resumen)(cnt);
     } catch (e) {
