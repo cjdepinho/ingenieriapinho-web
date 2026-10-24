@@ -15,6 +15,7 @@ function pintarNav() {
     if (!sesion) return;
     nav.append(h('a', { href: '#/' }, 'Mis cursos'), h('a', { href: '../#cursos' }, 'Catálogo'));
     if (sesion.perfil.role === 'admin') nav.append(h('a', { href: '../admin/' }, 'Administración'));
+    if (sesion.perfil.role === 'instructor') nav.append(h('a', { href: '../admin/' }, 'Panel de instructor'));
     nav.append(h('a', { href: '#/perfil' }, 'Mi perfil'),
         h('button', { class: 'enlace', type: 'button', onClick: async () => { await db.auth.salir(); sesion = null; ir('#/'); render(); } }, 'Salir'));
 }
