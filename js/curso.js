@@ -38,6 +38,9 @@ if (!curso) {
                 h('h1', {}, curso.titulo),
                 curso.subtitulo ? h('p', { style: 'font-size:1.2rem;color:var(--tinta-2)' }, curso.subtitulo) : null,
                 h('p', {}, curso.descripcion),
+                h('img', { class: 'afiche-curso', src: `assets/cursos/${curso.slug}.jpg`, alt: `Afiche y temario del curso ${curso.titulo}`, loading: 'lazy',
+                    style: 'display:block;width:100%;max-width:420px;height:auto;margin:1.4rem 0;border:2px solid var(--tinta)',
+                    onError: (e) => e.target.remove() }),
                 (curso.incluye || []).length
                     ? h('div', {}, h('h3', { style: 'margin:1.6rem 0 .4rem' }, 'Qué incluye'),
                         h('ul', { class: 'lista-check' }, curso.incluye.map((t) => h('li', {}, t))))
