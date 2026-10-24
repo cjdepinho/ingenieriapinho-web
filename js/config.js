@@ -18,7 +18,7 @@ export const CONFIG = {
         dominio: 'ingenieriapinho.com',
         instructor: 'Ing. Carlos J. Jerí De Pinho',
         cip: 'CIP 108121',
-        firma: ''  // ruta de la imagen de la firma, por ejemplo 'assets/firma.png'
+        firma: 'assets/firma.png'
     },
 
     // Instituciones que avalan los cursos y cuyo logo aparece en el certificado.
