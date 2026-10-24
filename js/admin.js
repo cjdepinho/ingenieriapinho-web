@@ -95,20 +95,39 @@ async function clases(cnt, cursoId) {
     if (!curso) return cursos(cnt);
     const campL = [{ n: 'titulo', l: 'Título de la clase', req: true }, { n: 'video_url', l: 'Enlace de YouTube (no listado)', t: 'url', ayuda: 'Pega el enlace del video.' },
         { n: 'descripcion', l: 'Descripción', t: 'textarea' }, { n: 'orden', l: 'Orden', t: 'number', min: 0, req: true }];
-    const campM = [{ n: 'titulo', l: 'Título', req: true }, { n: 'url', l: 'Enlace (Drive, Dropbox, etc.)', t: 'url', req: true },
+    const campM = [{ n: 'titulo', l: 'Título', req: true }, { n: 'archivo', l: 'Archivo (PDF, PowerPoint, Word, Excel…; máx. 50 MB)', t: 'file', ayuda: 'Se guarda en la página y solo lo descargan los alumnos matriculados.' },
+        { n: 'url', l: 'O un enlace externo (opcional)', t: 'url' },
         { n: 'tipo', l: 'Tipo', t: 'select', op: [['Documento', 'Documento'], ['Hoja de cálculo', 'Hoja de cálculo'], ['Presentación', 'Presentación'], ['Plantilla', 'Plantilla'], ['Otro', 'Otro']] }];
     const edL = async (l) => { const d = await pedirFormulario({ titulo: l ? 'Editar clase' : 'Nueva clase', campos: campL, valores: l || { orden: lecc.length + 1 } });
         if (d) seguro(async () => { l ? await db.update('lecciones', l.id, d) : await db.insert('lecciones', { ...d, curso_id: cursoId }); clases(cnt, cursoId); }); };
     const edM = async (m) => { const d = await pedirFormulario({ titulo: m ? 'Editar material' : 'Nuevo material', campos: campM, valores: m || {} });
-        if (d) seguro(async () => { m ? await db.update('materiales', m.id, d) : await db.insert('materiales', { ...d, curso_id: cursoId }); clases(cnt, cursoId); }); };
+        if (!d) return;
+        const archivo = d.archivo; delete d.archivo;
+        if (!archivo && !d.url && !(m && m.archivo_path)) return aviso('Sube un archivo o pega un enlace.', 'error');
+        if (archivo && archivo.size > 50 * 1024 * 1024) return aviso('El archivo supera los 50 MB.', 'error');
+        seguro(async () => {
+            if (archivo) {
+                const limpio = archivo.name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^A-Za-z0-9._-]+/g, '_').slice(-80);
+                const ruta = `${cursoId}/${Date.now()}-${limpio}`;
+                await db.storage.subir(ruta, archivo, 'materiales');
+                if (m && m.archivo_path) await db.storage.borrar(m.archivo_path, 'materiales').catch(() => null);
+                d.archivo_path = ruta; d.archivo_nombre = archivo.name;
+            }
+            if (!d.url) d.url = null;
+            m ? await db.update('materiales', m.id, d) : await db.insert('materiales', { ...d, curso_id: cursoId });
+            aviso('Material guardado.', 'ok'); clases(cnt, cursoId);
+        }); };
+    const borrarMat = (m) => async () => { if (await confirmar(`¿Eliminar "${m.titulo}"?`, 'Eliminar', true)) seguro(async () => {
+        if (m.archivo_path) await db.storage.borrar(m.archivo_path, 'materiales').catch(() => null);
+        await db.remove('materiales', m.id); clases(cnt, cursoId); }); };
     const borrar = (t, fila, id) => async () => { if (await confirmar(`¿Eliminar "${fila.titulo}"?`, 'Eliminar', true)) seguro(async () => { await db.remove(t, id); clases(cnt, cursoId); }); };
     marco('cursos', cnt, h('p', { class: 'migas' }, h('a', { href: '#/cursos' }, 'Cursos'), ` / ${curso.titulo}`), h('h1', {}, 'Clases y material'),
         h('div', { class: 'barra-herramientas' }, h('h2', {}, 'Clases'), h('span', { class: 'espacio' }), h('button', { class: 'boton', onClick: () => edL(null) }, 'Nueva clase')),
         tabla([{ t: 'N.º', num: true, f: (l) => l.orden }, { t: 'Clase', f: (l) => l.titulo }, { t: 'Video', f: (l) => l.video_url ? 'Sí' : 'No' },
             { t: '', f: (l) => h('div', { class: 'acciones-fila' }, h('button', { class: 'boton sec peq', onClick: () => edL(l) }, 'Editar'), h('button', { class: 'boton peligro peq', onClick: borrar('lecciones', l, l.id) }, 'Eliminar')) }], lecc, 'Aún no hay clases.'),
         h('div', { class: 'barra-herramientas', style: 'margin-top:2rem' }, h('h2', {}, 'Material educativo'), h('span', { class: 'espacio' }), h('button', { class: 'boton', onClick: () => edM(null) }, 'Nuevo material')),
-        tabla([{ t: 'Material', f: (m) => m.titulo }, { t: 'Tipo', f: (m) => m.tipo }, { t: '', f: (m) => h('div', { class: 'acciones-fila' }, h('button', { class: 'boton sec peq', onClick: () => edM(m) }, 'Editar'), h('button', { class: 'boton peligro peq', onClick: borrar('materiales', m, m.id) }, 'Eliminar')) }], mats, 'Aún no hay material.'),
-        h('p', { class: 'nota-pie' }, 'El material se comparte con enlaces a tus carpetas. Los archivos de pago no se guardan en la página pública.'));
+        tabla([{ t: 'Material', f: (m) => m.titulo }, { t: 'Tipo', f: (m) => m.tipo }, { t: 'Origen', f: (m) => m.archivo_path ? `Archivo: ${m.archivo_nombre || ''}` : 'Enlace' }, { t: '', f: (m) => h('div', { class: 'acciones-fila' }, h('button', { class: 'boton sec peq', onClick: () => edM(m) }, 'Editar'), h('button', { class: 'boton peligro peq', onClick: borrarMat(m) }, 'Eliminar')) }], mats, 'Aún no hay material.'),
+        h('p', { class: 'nota-pie' }, 'Los archivos que subes se guardan en un espacio privado de la página: solo los descargan alumnos con matrícula activa y tú.'));
 }
 
 // ---------- Matrículas y pagos ----------

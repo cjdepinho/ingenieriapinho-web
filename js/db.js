@@ -165,7 +165,8 @@ const local = {
     },
     storage: {
         async subir(ruta, archivo) { return { ruta, nombre: archivo.name }; },
-        async urlFirmada() { return null; }
+        async urlFirmada() { return null; },
+        async borrar() { return null; }
     },
     reiniciar() { localStorage.removeItem(CLAVE_DEMO); }
 };
@@ -236,13 +237,16 @@ async function crearSupabase() {
             }
         },
         storage: {
-            async subir(ruta, archivo) {
-                ok(await sb.storage.from('comprobantes').upload(ruta, archivo, { contentType: archivo.type }));
+            async subir(ruta, archivo, bucket = 'comprobantes') {
+                ok(await sb.storage.from(bucket).upload(ruta, archivo, { contentType: archivo.type || 'application/octet-stream' }));
                 return { ruta, nombre: archivo.name };
             },
-            async urlFirmada(ruta) {
-                const data = ok(await sb.storage.from('comprobantes').createSignedUrl(ruta, 600));
+            async urlFirmada(ruta, bucket = 'comprobantes', descarga = false) {
+                const data = ok(await sb.storage.from(bucket).createSignedUrl(ruta, 600, descarga ? { download: descarga } : undefined));
                 return data.signedUrl;
+            },
+            async borrar(ruta, bucket = 'comprobantes') {
+                ok(await sb.storage.from(bucket).remove([ruta]));
             }
         },
         reiniciar() { /* no aplica */ }
@@ -274,6 +278,7 @@ export const db = {
     },
     storage: {
         subir: async (...a) => (await obtener()).storage.subir(...a),
-        urlFirmada: async (...a) => (await obtener()).storage.urlFirmada(...a)
+        urlFirmada: async (...a) => (await obtener()).storage.urlFirmada(...a),
+        borrar: async (...a) => (await obtener()).storage.borrar(...a)
     }
 };

@@ -139,6 +139,14 @@ async function vistaMatricula(slug) {
 }
 
 // ---------- Aula ----------
+async function descargar(m) {
+    try {
+        const url = await db.storage.urlFirmada(m.archivo_path, 'materiales', m.archivo_nombre || true);
+        if (!url) return aviso('En modo demostración no hay archivos para descargar.', 'error');
+        window.location.assign(url);
+    } catch (e) { aviso(mensajeError(e), 'error'); }
+}
+
 async function vistaAula(cursoId, leccionId) {
     mostrar(h('p', { class: 'cargando' }, 'Cargando el aula…'));
     const [mats, [curso]] = await Promise.all([db.list('matriculas', { eq: { user_id: sesion.user.id, curso_id: cursoId } }), db.list('cursos', { eq: { id: cursoId } })]);
@@ -171,8 +179,10 @@ async function vistaAula(cursoId, leccionId) {
                 h('h2', {}, actual.titulo), h('p', {}, actual.descripcion || ''),
                 h('div', { class: 'acciones' }, h('button', { class: 'boton', type: 'button', onClick: marcar }, hechas.has(actual.id) ? 'Marcar como pendiente' : 'Marcar como vista')),
                 materiales.length ? h('div', { class: 'panel' }, h('h3', {}, 'Material del curso'),
-                    h('ul', { class: 'lista-check' }, materiales.filter((m) => urlSegura(m.url)).map((m) =>
-                        h('li', {}, h('a', { href: m.url, target: '_blank', rel: 'noopener noreferrer' }, m.titulo), ` (${m.tipo || 'Documento'})`)))) : null),
+                    h('ul', { class: 'lista-check' }, materiales.filter((m) => m.archivo_path || urlSegura(m.url)).map((m) =>
+                        h('li', {}, m.archivo_path
+                            ? h('a', { href: '#', onClick: (e) => { e.preventDefault(); descargar(m); } }, m.titulo)
+                            : h('a', { href: m.url, target: '_blank', rel: 'noopener noreferrer' }, m.titulo), ` (${m.tipo || 'Documento'})`)))) : null),
             h('aside', {},
                 h('div', { class: 'panel' }, h('h3', {}, 'Tu avance'),
                     h('div', { class: 'barra' }, h('i', { style: `width:${total ? Math.round(n * 100 / total) : 0}%` })),
