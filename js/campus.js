@@ -15,6 +15,7 @@ function pintarNav() {
     if (!sesion) return;
     nav.append(h('a', { href: '#/' }, 'Mis cursos'), h('a', { href: '../#cursos' }, 'Catálogo'));
     if (sesion.perfil.role === 'admin') nav.append(h('a', { href: '../admin/' }, 'Administración'));
+    if (sesion.perfil.role === 'instructor') nav.append(h('a', { href: '../admin/' }, 'Panel de instructor'));
     nav.append(h('a', { href: '#/perfil' }, 'Mi perfil'),
         h('button', { class: 'enlace', type: 'button', onClick: async () => { await db.auth.salir(); sesion = null; ir('#/'); render(); } }, 'Salir'));
 }
@@ -139,63 +140,234 @@ async function vistaMatricula(slug) {
 }
 
 // ---------- Aula ----------
-async function descargar(m) {
+// Descarga el material. Si pertenece a una clase, avisa para registrar la descarga.
+async function descargar(m, alDescargar) {
     try {
         const url = await db.storage.urlFirmada(m.archivo_path, 'materiales', m.archivo_nombre || true);
         if (!url) return aviso('En modo demostración no hay archivos para descargar.', 'error');
+        if (alDescargar) alDescargar();
         window.location.assign(url);
     } catch (e) { aviso(mensajeError(e), 'error'); }
 }
 
+// Seguimiento del video con la API de YouTube: cuenta el tiempo realmente reproducido (los saltos no suman).
+let detenerVideo = null;
+function cargarYT() {
+    if (window.YT && window.YT.Player) return Promise.resolve();
+    if (!cargarYT.p) cargarYT.p = new Promise((res) => {
+        const previo = window.onYouTubeIframeAPIReady;
+        window.onYouTubeIframeAPIReady = () => { if (previo) previo(); res(); };
+        const sc = document.createElement('script'); sc.src = 'https://www.youtube.com/iframe_api'; document.head.append(sc);
+    });
+    return cargarYT.p;
+}
+async function seguirVideo(caja, videoId, pctInicial, alCambiar) {
+    await cargarYT();
+    const lugar = h('div');
+    caja.replaceChildren(lugar);
+    let vistos = null, ultimo = null, dur = 0, pct = pctInicial, guardado = pctInicial;
+    const guardar = () => { if (pct > guardado) { guardado = pct; alCambiar(pct); } };
+    const reproductor = new window.YT.Player(lugar, {
+        videoId, host: 'https://www.youtube-nocookie.com', width: '100%', height: '100%',
+        playerVars: { rel: 0, modestbranding: 1, playsinline: 1 },
+        events: { onStateChange: (e) => { if (e.data !== 1) { ultimo = null; guardar(); } } }
+    });
+    const reloj = setInterval(() => {
+        try {
+            if (reproductor.getPlayerState() !== 1) return;
+            dur = reproductor.getDuration();
+            if (!dur) return;
+            if (vistos === null) vistos = pctInicial / 100 * dur;
+            const t = reproductor.getCurrentTime();
+            if (ultimo !== null) { const d = t - ultimo; if (d > 0 && d <= 2.6) vistos += d; }
+            ultimo = t;
+            pct = Math.min(100, Math.floor(vistos / dur * 100));
+            if (pct >= guardado + 5 || (pct >= 90 && guardado < 90)) guardar();
+        } catch { /* el reproductor aún no está listo */ }
+    }, 1000);
+    detenerVideo = () => { clearInterval(reloj); guardar(); try { reproductor.destroy(); } catch { /* ya no existe */ } detenerVideo = null; };
+}
+
 async function vistaAula(cursoId, leccionId) {
+    if (detenerVideo) detenerVideo();
     mostrar(h('p', { class: 'cargando' }, 'Cargando el aula…'));
     const [mats, [curso]] = await Promise.all([db.list('matriculas', { eq: { user_id: sesion.user.id, curso_id: cursoId } }), db.list('cursos', { eq: { id: cursoId } })]);
     if (!curso || !mats.some((m) => m.estado === 'activa' || m.estado === 'completada') && sesion.perfil.role !== 'admin')
         return mostrar(h('h1', {}, 'Sin acceso'), h('p', {}, 'Este curso aún no está habilitado en tu cuenta.'), h('a', { class: 'boton', href: '#/' }, 'Volver'));
-    const [lecc, materiales, progreso, certs] = await Promise.all([
+    const [lecc, materiales, progreso, certs, avances, intentos, info] = await Promise.all([
         db.list('lecciones', { eq: { curso_id: cursoId }, order: 'orden' }), db.list('materiales', { eq: { curso_id: cursoId } }),
-        db.list('progreso', { eq: { user_id: sesion.user.id } }), db.list('certificados', { eq: { user_id: sesion.user.id, curso_id: cursoId } })]);
+        db.list('progreso', { eq: { user_id: sesion.user.id } }), db.list('certificados', { eq: { user_id: sesion.user.id, curso_id: cursoId } }),
+        db.list('avance', { eq: { user_id: sesion.user.id } }).catch(() => []),
+        db.list('intentos', { eq: { user_id: sesion.user.id, curso_id: cursoId } }).catch(() => []),
+        db.rpc('examen_info', { p_curso: cursoId }).catch(() => null)]);
     const hechas = new Set(progreso.map((p) => p.leccion_id));
+    const av = new Map(avances.map((a) => [a.leccion_id, a]));
     const actual = lecc.find((l) => l.id === leccionId) || lecc.find((l) => !hechas.has(l.id)) || lecc[0];
     const vid = actual && youtubeId(actual.video_url);
-    const marcar = async () => {
-        try {
-            if (hechas.has(actual.id)) await db.removeWhere('progreso', { user_id: sesion.user.id, leccion_id: actual.id });
-            else await db.insert('progreso', { user_id: sesion.user.id, leccion_id: actual.id }, { retornar: false });
-            vistaAula(cursoId, actual.id);
-        } catch (e) { aviso(mensajeError(e), 'error'); }
+    const matClase = (l) => materiales.filter((m) => m.leccion_id === l.id && (m.archivo_path || urlSegura(m.url)));
+    // Una clase exige lo que tenga: video al 90 % y/o material descargado.
+    const estado = (l) => {
+        const a = av.get(l.id) || {}, nv = !!youtubeId(l.video_url), nm = matClase(l).length > 0;
+        const pct = a.video_pct || 0, desc = !!a.descargado;
+        const pend = !nv && !!l.fecha_clase;   // clase programada cuyo video aún no se publicó
+        return { nv, nm, pend, pct, desc, listo: !pend && (!nv || pct >= 90) && (!nm || desc) };
     };
-    const panelMaterial = (titulo, lista) => {
+    const total = lecc.length;
+    const examen = !!(info && info.preguntas > 0);
+    const cert = certs.find((c) => !c.revocado);
+
+    const chipVideo = h('span', { class: 'etiqueta' }), chipMat = h('span', { class: 'etiqueta' });
+    const nota = h('p', { class: 'sub' });
+    const marcasLista = new Map();
+    const barra = h('i'), textoAvance = h('p', { class: 'sub' }), cajaExamen = h('div');
+    const btnManual = h('button', { class: 'boton', type: 'button', onClick: () => guardarAvance(actual, {}) }, 'Marcar como vista');
+
+    const pintarExamen = () => {
+        if (!examen) { cajaExamen.replaceChildren(); return; }
+        const aprobado = intentos.find((i) => i.aprobado), usados = intentos.length, max = curso.intentos_max || 3, min = curso.nota_minima || 14;
+        const mejor = intentos.reduce((m, i) => Math.max(m, Number(i.nota)), 0);
+        const todas = total > 0 && lecc.every((l) => hechas.has(l.id));
+        let cuerpo;
+        if (aprobado) cuerpo = [h('p', { class: 'aviso ok' }, `Aprobaste con nota ${aprobado.nota} / 20.`),
+            cert ? h('a', { class: 'boton peq', href: `../certificado.html?c=${encodeURIComponent(cert.codigo)}`, target: '_blank', rel: 'noopener' }, 'Ver mi certificado')
+                 : h('p', { class: 'sub' }, curso.certificado_auto ? 'Tu certificado se está generando.' : 'El instructor emitirá tu certificado en breve.')];
+        else if (usados >= max && sesion.perfil.role !== 'admin') cuerpo = [h('p', { class: 'aviso error' }, `Usaste tus ${max} intentos (mejor nota: ${mejor} / 20). Escribe al instructor si necesitas otra oportunidad.`)];
+        else if (todas) cuerpo = [h('p', { class: 'sub' }, `Intento ${usados + 1} de ${max}. Nota mínima: ${min} sobre 20.`),
+            h('a', { class: 'boton', href: `#/examen/${cursoId}` }, 'Rendir la evaluación')];
+        else cuerpo = [h('p', { class: 'sub' }, 'Se habilita cuando completes las clases: ve el video al 90 % y descarga el material de cada una.')];
+        cajaExamen.replaceChildren(h('div', { class: 'panel' }, h('h3', {}, 'Evaluación final'), ...cuerpo));
+    };
+    const pintar = () => {
+        const e = estado(actual);
+        chipVideo.hidden = !e.nv; chipMat.hidden = !e.nm;
+        chipVideo.className = `etiqueta ${e.pct >= 90 ? 'ok' : 'aviso'}`; chipVideo.textContent = `Video: ${Math.min(e.pct, 100)} %${e.pct >= 90 ? ' ✓' : ' (mínimo 90 %)'}`;
+        chipMat.className = `etiqueta ${e.desc ? 'ok' : 'aviso'}`; chipMat.textContent = e.desc ? 'Material descargado ✓' : 'Material por descargar';
+        btnManual.hidden = e.nv || e.nm || e.pend || hechas.has(actual.id);
+        nota.textContent = (e.nv || e.nm) ? (hechas.has(actual.id) ? 'Clase completada.' : 'La clase se marca sola cuando ves el 90 % del video y descargas el material.') : '';
+        for (const l of lecc) { const m = marcasLista.get(l.id); m.a.classList.toggle('hecha', hechas.has(l.id)); m.marca.textContent = hechas.has(l.id) ? '✓' : ''; }
+        const n = lecc.filter((l) => hechas.has(l.id)).length;
+        barra.style.width = `${total ? Math.round(n * 100 / total) : 0}%`; textoAvance.textContent = `${n} de ${total} clases`;
+        pintarExamen();
+    };
+    const guardarAvance = async (l, parche) => {
+        try {
+            const previo = av.get(l.id) || {};
+            const a = { user_id: sesion.user.id, leccion_id: l.id, video_pct: previo.video_pct || 0, descargado: !!previo.descargado, ...parche };
+            a.video_pct = Math.max(previo.video_pct || 0, a.video_pct);
+            const e = estado(l);
+            if (!e.nv && !e.pend) a.video_pct = 100;
+            if (!e.nm) a.descargado = true;
+            a.actualizado = new Date().toISOString();
+            await db.upsert('avance', a, ['user_id', 'leccion_id']);
+            av.set(l.id, a);
+            if (estado(l).listo && !hechas.has(l.id)) {
+                await db.insert('progreso', { user_id: sesion.user.id, leccion_id: l.id }, { retornar: false });
+                hechas.add(l.id); aviso('¡Clase completada!', 'ok');
+            }
+        } catch (err) { aviso(mensajeError(err), 'error'); }
+        pintar();
+    };
+
+    const panelMaterial = (titulo, lista, alDescargar) => {
         const ver = lista.filter((m) => m.archivo_path || urlSegura(m.url));
         return ver.length ? h('div', { class: 'panel' }, h('h3', {}, titulo),
             h('ul', { class: 'lista-check' }, ver.map((m) =>
                 h('li', {}, m.archivo_path
-                    ? h('a', { href: '#', onClick: (e) => { e.preventDefault(); descargar(m); } }, m.titulo)
-                    : h('a', { href: m.url, target: '_blank', rel: 'noopener noreferrer' }, m.titulo), ` (${m.tipo || 'Documento'})`)))) : null;
+                    ? h('a', { href: '#', onClick: (e) => { e.preventDefault(); descargar(m, alDescargar); } }, m.titulo)
+                    : h('a', { href: m.url, target: '_blank', rel: 'noopener noreferrer', onClick: alDescargar }, m.titulo), ` (${m.tipo || 'Documento'})`)))) : null;
     };
-    const total = lecc.length, n = lecc.filter((l) => hechas.has(l.id)).length;
-    const cert = certs.find((c) => !c.revocado);
+    const aviso_sin_video = actual && actual.fecha_clase
+        ? h('div', { class: 'sin-video' }, h('div', {}, h('strong', {}, 'Esta clase se emitirá en vivo'), h('br'),
+            `${fechaLarga(actual.fecha_clase)}${actual.hora_clase ? `, ${actual.hora_clase}` : ''}`, h('br'),
+            'La grabación aparecerá aquí cuando el instructor la publique.'))
+        : h('div', { class: 'sin-video' }, 'Esta clase no tiene video.');
+    const cajaVideo = h('div', { class: 'video' }, vid ? null : aviso_sin_video);
     mostrar(h('p', { class: 'migas' }, h('a', { href: '#/' }, 'Mis cursos'), ` / ${curso.titulo}`),
         h('h1', {}, curso.titulo),
         !lecc.length ? h('div', { class: 'panel' }, 'El instructor aún no publicó las clases de este curso.') :
         h('div', { class: 'aula' },
             h('div', {},
-                h('div', { class: 'video' }, vid
-                    ? h('iframe', { src: `https://www.youtube-nocookie.com/embed/${vid}`, title: actual.titulo, allowfullscreen: true, loading: 'lazy',
-                        allow: 'accelerometer; encrypted-media; gyroscope; picture-in-picture', referrerpolicy: 'strict-origin-when-cross-origin' })
-                    : h('div', { class: 'sin-video' }, 'Esta clase no tiene video.')),
+                cajaVideo,
                 h('h2', {}, actual.titulo), h('p', {}, actual.descripcion || ''),
-                h('div', { class: 'acciones' }, h('button', { class: 'boton', type: 'button', onClick: marcar }, hechas.has(actual.id) ? 'Marcar como pendiente' : 'Marcar como vista')),
-                panelMaterial('Material de esta clase', materiales.filter((m) => m.leccion_id === actual.id)),
+                h('div', { class: 'acciones' }, chipVideo, chipMat, btnManual), nota,
+                panelMaterial('Material de esta clase', matClase(actual), () => guardarAvance(actual, { descargado: true })),
                 panelMaterial('Material del curso', materiales.filter((m) => !m.leccion_id))),
             h('aside', {},
                 h('div', { class: 'panel' }, h('h3', {}, 'Tu avance'),
-                    h('div', { class: 'barra' }, h('i', { style: `width:${total ? Math.round(n * 100 / total) : 0}%` })),
-                    h('p', { class: 'sub' }, `${n} de ${total} clases`),
-                    cert ? h('a', { class: 'boton peq', href: `../certificado.html?c=${encodeURIComponent(cert.codigo)}`, target: '_blank', rel: 'noopener' }, 'Ver mi certificado')
-                        : (n === total && total ? h('p', { class: 'aviso ok' }, 'Completaste el curso. El instructor emitirá tu certificado en breve.') : null)),
-                h('ol', { class: 'lecciones' }, lecc.map((l) => h('li', {}, h('a', { href: `#/aula/${cursoId}/${l.id}`, class: `${l.id === actual.id ? 'actual' : ''} ${hechas.has(l.id) ? 'hecha' : ''}` },
-                    h('span', { class: 'marca-leccion' }, hechas.has(l.id) ? '✓' : ''), l.titulo)))))));
+                    h('div', { class: 'barra' }, barra), textoAvance,
+                    cert ? h('a', { class: 'boton peq', href: `../certificado.html?c=${encodeURIComponent(cert.codigo)}`, target: '_blank', rel: 'noopener' }, 'Ver mi certificado') : null),
+                cajaExamen,
+                h('ol', { class: 'lecciones' }, lecc.map((l) => {
+                    const marca = h('span', { class: 'marca-leccion' });
+                    const a = h('a', { href: `#/aula/${cursoId}/${l.id}`, class: l.id === actual.id ? 'actual' : '' }, marca, h('span', {}, l.titulo, (!youtubeId(l.video_url) && l.fecha_clase) ? h('small', { class: 'fecha-clase' }, `En vivo: ${fechaLarga(l.fecha_clase)}`) : null));
+                    marcasLista.set(l.id, { a, marca });
+                    return h('li', {}, a);
+                })))));
+    pintar();
+    if (vid) seguirVideo(cajaVideo, vid, estado(actual).pct, (pct) => guardarAvance(actual, { video_pct: pct }));
+}
+
+// ---------- Evaluación final ----------
+const mezclar = (lista) => {
+    const a = lista.slice();
+    for (let i = a.length - 1; i > 0; i--) { const j = crypto.getRandomValues(new Uint32Array(1))[0] % (i + 1); [a[i], a[j]] = [a[j], a[i]]; }
+    return a;
+};
+
+async function vistaExamen(cursoId) {
+    if (detenerVideo) detenerVideo();
+    mostrar(h('p', { class: 'cargando' }, 'Cargando la evaluación…'));
+    const volver = h('a', { class: 'boton sec', href: `#/aula/${cursoId}` }, 'Volver al aula');
+    let preguntas, curso;
+    try {
+        [[curso], preguntas] = await Promise.all([db.list('cursos', { eq: { id: cursoId } }), db.rpc('examen_preguntas', { p_curso: cursoId })]);
+    } catch (e) { return mostrar(h('h1', {}, 'Evaluación final'), h('p', {}, mensajeError(e)), volver); }
+    if (!preguntas || !preguntas.length) return mostrar(h('h1', {}, 'Evaluación final'), h('p', {}, 'Este curso aún no tiene evaluación.'), volver);
+    const orden = mezclar(preguntas);
+    const campos = new Map();
+    const bloques = orden.map((q, i) => {
+        let entrada;
+        if (q.tipo === 'opcion') {
+            const radios = mezclar(q.opciones.map((t, k) => ({ t, k }))).map((o) => {
+                const r = h('input', { type: 'radio', name: `p-${q.id}`, value: String(o.k) });
+                return { r, el: h('label', { class: 'opcion' }, r, h('span', {}, o.t)) };
+            });
+            campos.set(q.id, () => { const x = radios.find((o) => o.r.checked); return x ? x.r.value : ''; });
+            entrada = h('div', { class: 'opciones' }, radios.map((o) => o.el));
+        } else {
+            const inp = h('input', { type: 'text', inputmode: 'decimal', autocomplete: 'off', class: 'numero', placeholder: 'Escribe tu respuesta' });
+            campos.set(q.id, () => inp.value.trim());
+            entrada = inp;
+        }
+        return h('div', { class: 'panel pregunta' }, h('h3', {}, `${i + 1}. ${q.enunciado}`), entrada);
+    });
+    const enviar = h('button', { class: 'boton', type: 'button' }, 'Enviar mis respuestas');
+    enviar.addEventListener('click', async () => {
+        const respuestas = {}; let faltan = 0;
+        for (const [id, leer] of campos) { respuestas[id] = leer(); if (!respuestas[id]) faltan++; }
+        if (faltan) return aviso(`Te falta responder ${faltan} pregunta${faltan > 1 ? 's' : ''}.`, 'error');
+        enviar.disabled = true;
+        try {
+            const r = await db.rpc('examen_enviar', { p_curso: cursoId, p_respuestas: respuestas });
+            resultado(r);
+        } catch (e) { aviso(mensajeError(e), 'error'); enviar.disabled = false; }
+    });
+    const resultado = (r) => {
+        const porId = new Map((r.detalle || []).map((d) => [d.id, d]));
+        mostrar(h('h1', {}, r.aprobado ? '¡Aprobaste la evaluación!' : 'Aún no alcanzas la nota mínima'),
+            h('div', { class: 'panel' }, h('p', { class: 'nota-final' }, `${r.nota} / 20`),
+                h('p', { class: 'sub' }, `Nota mínima: ${r.nota_minima}. Intento ${r.intento} de ${r.intentos_max}.`),
+                r.certificado ? h('p', { class: 'aviso ok' }, 'Tu certificado ya fue emitido. Lo encuentras en el aula.')
+                    : (r.aprobado ? h('p', { class: 'aviso ok' }, 'El instructor emitirá tu certificado en breve.') :
+                       (r.intento < r.intentos_max ? h('p', { class: 'aviso' }, 'Repasa el material y vuelve a intentarlo: las preguntas cambian de orden.') : null))),
+            ...orden.map((q, i) => { const d = porId.get(q.id) || {};
+                return h('div', { class: `panel pregunta ${d.ok ? 'bien' : 'mal'}` }, h('h3', {}, `${i + 1}. ${q.enunciado}`),
+                    h('p', { class: 'veredicto' }, d.ok ? '✓ Correcta' : '✗ Incorrecta'), d.explicacion ? h('p', { class: 'sub' }, d.explicacion) : null); }),
+            h('div', { class: 'acciones' }, volver));
+    };
+    mostrar(h('p', { class: 'migas' }, h('a', { href: '#/' }, 'Mis cursos'), ` / ${curso ? curso.titulo : ''}`), h('h1', {}, 'Evaluación final'),
+        h('p', { class: 'sub' }, `${orden.length} preguntas. Nota mínima ${curso ? curso.nota_minima : 14} sobre 20. En las preguntas con cifras, escribe el valor de tu propio ejemplo en Civil 3D.`),
+        ...bloques, h('div', { class: 'acciones' }, enviar, volver));
 }
 
 // ---------- Perfil ----------
@@ -221,6 +393,7 @@ async function render() {
         if (!sesion) return vistaAcceso(location.hash.startsWith('#/matricula') ? location.hash : null);
         if (ruta === 'matricula') return await vistaMatricula(decodeURIComponent(a || ''));
         if (ruta === 'aula') return await vistaAula(a, b);
+        if (ruta === 'examen') return await vistaExamen(a);
         if (ruta === 'perfil') return vistaPerfil();
         return await vistaInicio();
     } catch (e) {

@@ -7,6 +7,7 @@ import { $, h, aviso, soles, hoyISO, fechaCorta, mesEtiqueta, MESES, crearSlug, 
 
 const raiz = $('#raiz');
 let sesion = null;
+let esInstr = false;      // true si la cuenta es de instructor (acceso limitado)
 let mesSel = hoyISO().slice(0, 7);
 let mesCal = hoyISO().slice(0, 7);
 let filtroMat = 'pendiente';
@@ -25,7 +26,7 @@ function marco(seccion, contador, ...contenido) {
     raiz.replaceChildren(h('div', { class: 'admin' },
         h('aside', { class: 'lateral' },
             h('a', { href: '../', class: 'marca' }, h('img', { src: '../assets/logo.svg', alt: '', width: 30, height: 30 }), h('span', {}, 'Pinho ', h('b', {}, 'Admin'))),
-            SECCIONES.map(([id, et]) => h('a', { href: `#/${id}`, class: id === seccion ? 'activo' : '' }, et,
+            (esInstr ? [['cursos', 'Mis cursos']] : SECCIONES).map(([id, et]) => h('a', { href: `#/${id}`, class: id === seccion ? 'activo' : '' }, et,
                 id === 'matriculas' && contador.pend ? h('span', { class: 'contador' }, contador.pend) : null,
                 id === 'consultas' && contador.cons ? h('span', { class: 'contador' }, contador.cons) : null)),
             h('div', { class: 'separador' }),
@@ -68,39 +69,46 @@ const camposCurso = [
     { n: 'horas', l: 'Horas (opcional)', t: 'number', min: 0, paso: '0.5' }, { n: 'precio', l: 'Precio (S/)', t: 'number', min: 0, paso: '0.01', req: true },
     { n: 'modalidad', l: 'Modalidad' }, { n: 'incluye', l: 'Qué incluye (uno por línea)', t: 'textarea' },
     { n: 'temario', l: 'Temario (uno por línea)', t: 'textarea' }, { n: 'orden', l: 'Orden en la web', t: 'number', min: 0 },
-    { n: 'publicado', l: 'Publicado en la web', t: 'checkbox' }];
+    { n: 'publicado', l: 'Publicado en la web', t: 'checkbox' },
+    { n: 'certificado_auto', l: 'Emitir el certificado automáticamente al aprobar la evaluación', t: 'checkbox' },
+    { n: 'nota_minima', l: 'Nota mínima aprobatoria (sobre 20)', t: 'number', min: 1, req: true },
+    { n: 'intentos_max', l: 'Intentos permitidos en la evaluación', t: 'number', min: 1, req: true },
+    { n: 'preguntas_por_examen', l: 'Preguntas que se sortean del banco en cada intento', t: 'number', min: 1, req: true }];
 
 async function cursos(cnt) {
-    const lista = await db.list('cursos', { order: 'orden' });
+    let lista = await db.list('cursos', { order: 'orden' });
+    if (esInstr) { const asig = (await db.list('cursos_instructores', { eq: { user_id: sesion.user.id } })).map((x) => x.curso_id); lista = lista.filter((c) => asig.includes(c.id)); }
     const editar = async (c) => {
-        const v = c ? { ...c, incluye: (c.incluye || []).join('\n'), temario: (c.temario || []).join('\n') } : { precio: 500, modalidad: 'Virtual', orden: lista.length + 1 };
+        const v = c ? { ...c, incluye: (c.incluye || []).join('\n'), temario: (c.temario || []).join('\n') } : { precio: 500, modalidad: 'Virtual', orden: lista.length + 1, nota_minima: 14, intentos_max: 3, preguntas_por_examen: 10, certificado_auto: false };
         const d = await pedirFormulario({ titulo: c ? 'Editar curso' : 'Nuevo curso', campos: camposCurso, valores: v });
         if (!d) return;
         const fila = { ...d, slug: crearSlug(d.slug || d.titulo), incluye: linea(d.incluye), temario: linea(d.temario) };
         await seguro(async () => { c ? await db.update('cursos', c.id, fila) : await db.insert('cursos', fila); aviso('Curso guardado.', 'ok'); cursos(cnt); });
     };
-    marco('cursos', cnt, h('h1', {}, 'Cursos y clases'),
-        h('div', { class: 'barra-herramientas' }, h('span', { class: 'espacio' }), h('button', { class: 'boton', onClick: () => editar(null) }, 'Nuevo curso')),
+    marco('cursos', cnt, h('h1', {}, esInstr ? 'Mis cursos' : 'Cursos y clases'),
+        esInstr ? null : h('div', { class: 'barra-herramientas' }, h('span', { class: 'espacio' }), h('button', { class: 'boton', onClick: () => editar(null) }, 'Nuevo curso')),
         tabla([{ t: 'Curso', f: (c) => c.titulo }, { t: 'Nivel', f: (c) => c.nivel }, { t: 'Precio', num: true, f: (c) => soles(c.precio) },
             { t: 'Estado', f: (c) => h('span', { class: `etiqueta ${c.publicado ? 'ok' : ''}` }, c.publicado ? 'Publicado' : 'Borrador') },
             { t: '', f: (c) => h('div', { class: 'acciones-fila' },
                 h('a', { class: 'boton sec peq', href: `#/clases/${c.id}` }, 'Clases y material'),
-                h('button', { class: 'boton sec peq', onClick: () => editar(c) }, 'Editar'),
-                h('button', { class: 'boton peligro peq', onClick: async () => { if (await confirmar(`¿Eliminar "${c.titulo}" con sus clases y matrículas?`, 'Eliminar', true)) seguro(async () => { await db.remove('cursos', c.id); cursos(cnt); }); } }, 'Eliminar')) }],
-            lista, 'Aún no hay cursos.'));
+                esInstr ? null : h('button', { class: 'boton sec peq', onClick: () => editar(c) }, 'Editar'),
+                esInstr ? null : h('button', { class: 'boton peligro peq', onClick: async () => { if (await confirmar(`¿Eliminar "${c.titulo}" con sus clases y matrículas?`, 'Eliminar', true)) seguro(async () => { await db.remove('cursos', c.id); cursos(cnt); }); } }, 'Eliminar')) }],
+            lista, esInstr ? 'Aún no tienes cursos asignados. Pídele al administrador que te asigne uno.' : 'Aún no hay cursos.'));
 }
 
 async function clases(cnt, cursoId) {
     const [[curso], lecc, mats] = await Promise.all([db.list('cursos', { eq: { id: cursoId } }), db.list('lecciones', { eq: { curso_id: cursoId }, order: 'orden' }), db.list('materiales', { eq: { curso_id: cursoId } })]);
     if (!curso) return cursos(cnt);
     const campL = [{ n: 'titulo', l: 'Título de la clase', req: true }, { n: 'video_url', l: 'Enlace de YouTube (no listado)', t: 'url', ayuda: 'Pega el enlace del video.' },
+        { n: 'fecha_clase', l: 'Fecha de la clase en vivo (opcional)', t: 'date', ayuda: 'Mientras no pegues el enlace del video, el alumno verá que la clase se emitirá en esta fecha.' },
+        { n: 'hora_clase', l: 'Horario (opcional)', ayuda: 'Por ejemplo: 7:00 p. m. a 9:00 p. m.' },
         { n: 'descripcion', l: 'Descripción', t: 'textarea' }, { n: 'orden', l: 'Orden', t: 'number', min: 0, req: true }];
     const campM = [{ n: 'titulo', l: 'Título', req: true }, { n: 'archivo', l: 'Archivo (PDF, PowerPoint, Word, Excel…; máx. 50 MB)', t: 'file', ayuda: 'Se guarda en la página y solo lo descargan los alumnos matriculados.' },
         { n: 'url', l: 'O un enlace externo (opcional)', t: 'url' },
         { n: 'leccion_id', l: 'Clase a la que pertenece', t: 'select', op: [['', 'Todo el curso (material general)'], ...lecc.map((l) => [l.id, `${l.orden}. ${l.titulo}`])] },
         { n: 'tipo', l: 'Tipo', t: 'select', op: [['Documento', 'Documento'], ['Hoja de cálculo', 'Hoja de cálculo'], ['Presentación', 'Presentación'], ['Plantilla', 'Plantilla'], ['Otro', 'Otro']] }];
     const edL = async (l) => { const d = await pedirFormulario({ titulo: l ? 'Editar clase' : 'Nueva clase', campos: campL, valores: l || { orden: lecc.length + 1 } });
-        if (d) seguro(async () => { l ? await db.update('lecciones', l.id, d) : await db.insert('lecciones', { ...d, curso_id: cursoId }); clases(cnt, cursoId); }); };
+        if (d) { if (!d.fecha_clase) d.fecha_clase = null; seguro(async () => { l ? await db.update('lecciones', l.id, d) : await db.insert('lecciones', { ...d, curso_id: cursoId }); clases(cnt, cursoId); }); } };
     const edM = async (m) => { const d = await pedirFormulario({ titulo: m ? 'Editar material' : 'Nuevo material', campos: campM, valores: m || {} });
         if (!d) return;
         const archivo = d.archivo; delete d.archivo;
@@ -123,13 +131,34 @@ async function clases(cnt, cursoId) {
         if (m.archivo_path) await db.storage.borrar(m.archivo_path, 'materiales').catch(() => null);
         await db.remove('materiales', m.id); clases(cnt, cursoId); }); };
     const borrar = (t, fila, id) => async () => { if (await confirmar(`¿Eliminar "${fila.titulo}"?`, 'Eliminar', true)) seguro(async () => { await db.remove(t, id); clases(cnt, cursoId); }); };
-    marco('cursos', cnt, h('p', { class: 'migas' }, h('a', { href: '#/cursos' }, 'Cursos'), ` / ${curso.titulo}`), h('h1', {}, 'Clases y material'),
+    let bloqueInstr = null;
+    if (!esInstr) {
+        const [asig, perf] = await Promise.all([db.list('cursos_instructores', { eq: { curso_id: cursoId } }).catch(() => []), db.list('profiles')]);
+        const porId = Object.fromEntries(perf.map((p) => [p.id, p]));
+        const agregar = async () => {
+            const cand = perf.filter((p) => p.role !== 'admin' && !asig.some((x) => x.user_id === p.id));
+            if (!cand.length) return aviso('No hay usuarios disponibles. El instructor debe registrarse primero en el campus.', 'error');
+            const d = await pedirFormulario({ titulo: 'Asignar instructor', campos: [{ n: 'user_id', l: 'Usuario (debe estar registrado en el campus)', t: 'select', op: cand.map((p) => [p.id, `${p.nombre || '(sin nombre)'} · ${p.email}`]), req: true }] });
+            if (!d) return;
+            seguro(async () => { await db.update('profiles', d.user_id, { role: 'instructor' }); await db.insert('cursos_instructores', { curso_id: cursoId, user_id: d.user_id }); aviso('Instructor asignado.', 'ok'); clases(cnt, cursoId); });
+        };
+        const quitar = (x) => async () => { if (await confirmar(`¿Quitar a ${(porId[x.user_id] || {}).email || 'este usuario'} de este curso?`, 'Quitar', true)) seguro(async () => {
+            await db.removeWhere('cursos_instructores', { curso_id: cursoId, user_id: x.user_id });
+            const otros = await db.list('cursos_instructores', { eq: { user_id: x.user_id } });
+            if (!otros.length) await db.update('profiles', x.user_id, { role: 'alumno' });
+            clases(cnt, cursoId); }); };
+        bloqueInstr = h('div', {}, h('div', { class: 'barra-herramientas', style: 'margin-top:2rem' }, h('h2', {}, 'Instructores del curso'), h('span', { class: 'espacio' }), h('button', { class: 'boton', onClick: agregar }, 'Asignar instructor')),
+            tabla([{ t: 'Nombre', f: (x) => (porId[x.user_id] || {}).nombre || '' }, { t: 'Correo', f: (x) => (porId[x.user_id] || {}).email || '' },
+                { t: '', f: (x) => h('button', { class: 'boton peligro peq', onClick: quitar(x) }, 'Quitar') }], asig, 'Este curso aún no tiene instructores. Puede subir clases y material solo en los cursos asignados.'));
+    }
+    marco('cursos', cnt, h('p', { class: 'migas' }, h('a', { href: '#/cursos' }, esInstr ? 'Mis cursos' : 'Cursos'), ` / ${curso.titulo}`), h('h1', {}, 'Clases y material'),
         h('div', { class: 'barra-herramientas' }, h('h2', {}, 'Clases'), h('span', { class: 'espacio' }), h('button', { class: 'boton', onClick: () => edL(null) }, 'Nueva clase')),
-        tabla([{ t: 'N.º', num: true, f: (l) => l.orden }, { t: 'Clase', f: (l) => l.titulo }, { t: 'Video', f: (l) => l.video_url ? 'Sí' : 'No' },
+        tabla([{ t: 'N.º', num: true, f: (l) => l.orden }, { t: 'Clase', f: (l) => l.titulo }, { t: 'Clase en vivo', f: (l) => l.fecha_clase ? `${fechaCorta(l.fecha_clase)}${l.hora_clase ? ` · ${l.hora_clase}` : ''}` : '—' }, { t: 'Video', f: (l) => l.video_url ? 'Sí' : 'No' },
             { t: '', f: (l) => h('div', { class: 'acciones-fila' }, h('button', { class: 'boton sec peq', onClick: () => edL(l) }, 'Editar'), h('button', { class: 'boton peligro peq', onClick: borrar('lecciones', l, l.id) }, 'Eliminar')) }], lecc, 'Aún no hay clases.'),
         h('div', { class: 'barra-herramientas', style: 'margin-top:2rem' }, h('h2', {}, 'Material educativo'), h('span', { class: 'espacio' }), h('button', { class: 'boton', onClick: () => edM(null) }, 'Nuevo material')),
         tabla([{ t: 'Material', f: (m) => m.titulo }, { t: 'Clase', f: (m) => { const l = lecc.find((x) => x.id === m.leccion_id); return l ? `${l.orden}. ${l.titulo}` : 'Todo el curso'; } }, { t: 'Tipo', f: (m) => m.tipo }, { t: 'Origen', f: (m) => m.archivo_path ? `Archivo: ${m.archivo_nombre || ''}` : 'Enlace' }, { t: '', f: (m) => h('div', { class: 'acciones-fila' }, h('button', { class: 'boton sec peq', onClick: () => edM(m) }, 'Editar'), h('button', { class: 'boton peligro peq', onClick: borrarMat(m) }, 'Eliminar')) }], mats, 'Aún no hay material.'),
-        h('p', { class: 'nota-pie' }, 'Los archivos que subes se guardan en un espacio privado de la página: solo los descargan alumnos con matrícula activa y tú.'));
+        bloqueInstr,
+        h('p', { class: 'nota-pie' }, 'Los archivos que subes se guardan en un espacio privado de la página: solo los descargan alumnos con matrícula activa y quienes administran el curso.'));
 }
 
 // ---------- Matrículas y pagos ----------
@@ -188,9 +217,10 @@ async function alumnos(cnt) {
 
 // ---------- Certificados ----------
 async function certificados(cnt) {
-    const [cert, mats, perfiles, cs, lecc, prog] = await Promise.all([db.list('certificados', { order: ['created_at', 'desc'] }), db.list('matriculas'), db.list('profiles'), db.list('cursos'), db.list('lecciones'), db.list('progreso')]);
+    const [cert, mats, perfiles, cs, lecc, prog, preg, intentos] = await Promise.all([db.list('certificados', { order: ['created_at', 'desc'] }), db.list('matriculas'), db.list('profiles'), db.list('cursos'), db.list('lecciones'), db.list('progreso'), db.list('preguntas').catch(() => []), db.list('intentos').catch(() => [])]);
     const completo = (m) => { const ls = lecc.filter((l) => l.curso_id === m.curso_id); return ls.length > 0 && ls.every((l) => prog.some((p) => p.user_id === m.user_id && p.leccion_id === l.id)); };
-    const candidatos = mats.filter((m) => (m.estado === 'activa' || m.estado === 'completada') && completo(m) && !cert.some((c) => c.user_id === m.user_id && c.curso_id === m.curso_id));
+    const aprobo = (m) => !preg.some((p) => p.curso_id === m.curso_id) || intentos.some((i) => i.user_id === m.user_id && i.curso_id === m.curso_id && i.aprobado);
+    const candidatos = mats.filter((m) => (m.estado === 'activa' || m.estado === 'completada') && completo(m) && aprobo(m) && !cert.some((c) => c.user_id === m.user_id && c.curso_id === m.curso_id));
     const emitir = async (m) => {
         const p = perfiles.find((x) => x.id === m.user_id), c = cs.find((x) => x.id === m.curso_id);
         if (!p || !c) return;
@@ -203,7 +233,7 @@ async function certificados(cnt) {
     marco('certificados', cnt, h('h1', {}, 'Certificados'),
         h('h2', {}, 'Listos para emitir'),
         tabla([{ t: 'Alumno', f: (m) => (perfiles.find((x) => x.id === m.user_id) || {}).nombre || '' }, { t: 'Curso', f: (m) => (cs.find((x) => x.id === m.curso_id) || {}).titulo || '' },
-            { t: '', f: (m) => h('button', { class: 'boton peq', onClick: () => emitir(m) }, 'Emitir certificado') }], candidatos, 'Ningún alumno ha completado todas las clases pendientes de certificar.'),
+            { t: '', f: (m) => h('button', { class: 'boton peq', onClick: () => emitir(m) }, 'Emitir certificado') }], candidatos, 'Ningún alumno ha completado todas las clases y aprobado la evaluación pendientes de certificar.'),
         h('h2', { style: 'margin-top:2rem' }, 'Emitidos'),
         tabla([{ t: 'Código', f: (c) => c.codigo }, { t: 'Alumno', f: (c) => c.alumno_nombre }, { t: 'Curso', f: (c) => c.curso_titulo }, { t: 'Fecha', f: (c) => fechaCorta(c.fecha_emision) },
             { t: 'Estado', f: (c) => h('span', { class: `etiqueta ${c.revocado ? 'error' : 'ok'}` }, c.revocado ? 'Anulado' : 'Vigente') },
@@ -389,11 +419,13 @@ async function render() {
     try {
         sesion = sesion || await db.auth.sesion();
         if (!sesion) return raiz.replaceChildren(h('main', { class: 'app-principal contenedor' }, h('h1', {}, 'Administración'), h('p', {}, 'Entra primero al campus con tu cuenta de administrador.'), h('a', { class: 'boton', href: '../campus/' }, 'Ir al campus')));
-        if (sesion.perfil.role !== 'admin') return raiz.replaceChildren(h('main', { class: 'app-principal contenedor' }, h('h1', {}, 'Acceso restringido'), h('p', {}, 'Tu cuenta no tiene permisos de administración.'), h('a', { class: 'boton', href: '../campus/' }, 'Volver al campus')));
-        const cnt = await contadores();
+        esInstr = sesion.perfil.role === 'instructor';
+        if (sesion.perfil.role !== 'admin' && !esInstr) return raiz.replaceChildren(h('main', { class: 'app-principal contenedor' }, h('h1', {}, 'Acceso restringido'), h('p', {}, 'Tu cuenta no tiene permisos de administración.'), h('a', { class: 'boton', href: '../campus/' }, 'Volver al campus')));
+        const cnt = esInstr ? {} : await contadores();
         const [, ruta = 'resumen', id] = location.hash.split('/');
         const mapa = { resumen, cursos, matriculas, alumnos, certificados, planificacion, contabilidad, consultas, sql: consolaSQL, ajustes };
         if (ruta === 'clases') return await clases(cnt, id);
+        if (esInstr) return await cursos(cnt);
         return await (mapa[ruta] || resumen)(cnt);
     } catch (e) {
         raiz.replaceChildren(h('main', { class: 'app-principal contenedor' }, h('h1', {}, 'No se pudo cargar'), h('p', {}, mensajeError(e)), h('button', { class: 'boton', onClick: render }, 'Reintentar')));

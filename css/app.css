@@ -197,3 +197,17 @@ td .acciones-fila { display: flex; gap: .4rem; flex-wrap: wrap; }
     .modal .fila-campos { grid-template-columns: 1fr; }
     .dia { min-height: 4.2rem; }
 }
+
+/* Evaluación final y avance por clase */
+.nota-final { font-family: var(--f-titulo, inherit); font-size: 3rem; font-weight: 700; margin: 0; }
+.pregunta { margin: 1rem 0; }
+.pregunta h3 { font-size: 1.15rem; line-height: 1.35; margin-bottom: .8rem; }
+.pregunta .opciones { display: grid; gap: .5rem; }
+.pregunta .opcion { display: flex; gap: .6rem; align-items: flex-start; padding: .55rem .8rem; border: 1px solid var(--linea, #d8dee6); border-radius: var(--r-m); cursor: pointer; }
+.pregunta .opcion:hover { background: var(--papel); }
+.pregunta input.numero { width: 100%; max-width: 20rem; padding: .6rem .8rem; border: 1px solid var(--linea, #d8dee6); border-radius: var(--r-m); font: inherit; }
+.pregunta.bien { border-left: 4px solid var(--ok); }
+.pregunta.mal { border-left: 4px solid var(--error); }
+.pregunta .veredicto { font-weight: 600; margin: 0 0 .4rem; }
+.fecha-clase { display: block; font-size: .8rem; color: var(--azul-osc, #345); font-weight: 400; }
+.acciones { display: flex; flex-wrap: wrap; gap: .6rem; align-items: center; margin: 1rem 0; }
