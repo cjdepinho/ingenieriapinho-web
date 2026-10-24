@@ -152,7 +152,8 @@ async function matriculas(cnt) {
             { t: '', f: (m) => h('div', { class: 'acciones-fila' },
                 m.comprobante_path ? h('button', { class: 'boton sec peq', onClick: () => verComprobante(m) }, 'Comprobante') : null,
                 m.estado === 'pendiente' || m.estado === 'rechazada' ? h('button', { class: 'boton peq', onClick: () => aprobar(m) }, 'Aprobar') : null,
-                m.estado === 'pendiente' ? h('button', { class: 'boton peligro peq', onClick: () => rechazar(m) }, 'Rechazar') : null) }], lista, 'No hay matrículas en este estado.'));
+                m.estado === 'pendiente' ? h('button', { class: 'boton peligro peq', onClick: () => rechazar(m) }, 'Rechazar') : null,
+                h('button', { class: 'boton sec peq', onClick: async () => { if (await confirmar('¿Eliminar esta matrícula? No se puede deshacer; el ingreso registrado en Contabilidad se conserva.', 'Eliminar', true)) seguro(async () => { await db.remove('matriculas', m.id); matriculas(await contadores()); }); } }, 'Eliminar')) }], lista, 'No hay matrículas en este estado.'));
 }
 
 // ---------- Alumnos ----------
@@ -186,7 +187,8 @@ async function certificados(cnt) {
         tabla([{ t: 'Código', f: (c) => c.codigo }, { t: 'Alumno', f: (c) => c.alumno_nombre }, { t: 'Curso', f: (c) => c.curso_titulo }, { t: 'Fecha', f: (c) => fechaCorta(c.fecha_emision) },
             { t: 'Estado', f: (c) => h('span', { class: `etiqueta ${c.revocado ? 'error' : 'ok'}` }, c.revocado ? 'Anulado' : 'Vigente') },
             { t: '', f: (c) => h('div', { class: 'acciones-fila' }, h('a', { class: 'boton sec peq', href: `../certificado.html?c=${encodeURIComponent(c.codigo)}`, target: '_blank', rel: 'noopener' }, 'Ver'),
-                h('button', { class: 'boton sec peq', onClick: async () => { if (await confirmar(c.revocado ? '¿Restablecer este certificado?' : '¿Anular este certificado? Dejará de verificarse como válido.', c.revocado ? 'Restablecer' : 'Anular', !c.revocado)) seguro(async () => { await db.update('certificados', c.id, { revocado: !c.revocado }); certificados(cnt); }); } }, c.revocado ? 'Restablecer' : 'Anular')) }], cert, 'Aún no emitiste certificados.'));
+                h('button', { class: 'boton sec peq', onClick: async () => { if (await confirmar(c.revocado ? '¿Restablecer este certificado?' : '¿Anular este certificado? Dejará de verificarse como válido.', c.revocado ? 'Restablecer' : 'Anular', !c.revocado)) seguro(async () => { await db.update('certificados', c.id, { revocado: !c.revocado }); certificados(cnt); }); } }, c.revocado ? 'Restablecer' : 'Anular'),
+                h('button', { class: 'boton sec peq', onClick: async () => { if (await confirmar(`¿Eliminar el certificado ${c.codigo}? Dejará de existir y no podrá verificarse.`, 'Eliminar', true)) seguro(async () => { await db.remove('certificados', c.id); certificados(cnt); }); } }, 'Eliminar')) }], cert, 'Aún no emitiste certificados.'));
 }
 
 // ---------- Planificación ----------
