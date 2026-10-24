@@ -213,3 +213,8 @@ td .acciones-fila { display: flex; gap: .4rem; flex-wrap: wrap; }
 .acciones { display: flex; flex-wrap: wrap; gap: .6rem; align-items: center; margin: 1rem 0; }
 
 [hidden] { display: none !important; }
+
+/* Alternativas de la evaluación: círculo a la izquierda y texto alineado */
+.pregunta .opcion { text-align: left; }
+.pregunta .opcion input[type="radio"] { width: auto; flex: 0 0 auto; margin: .3rem 0 0; padding: 0; }
+.pregunta .opcion span { flex: 1 1 auto; text-align: left; line-height: 1.4; }
