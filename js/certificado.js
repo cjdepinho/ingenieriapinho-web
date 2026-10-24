@@ -44,7 +44,7 @@ try {
                 h('div', { class: 'detalle' }, [c.horas ? `${c.horas} horas` : null, `Emitido el ${fechaLarga(c.fecha_emision)}`].filter(Boolean).join(' · ')),
                 avales.length ? h('div', { class: 'avales' }, avales) : null),
             h('div', { class: 'pie-cert' },
-                h('div', { class: 'firma' }, h('i'), h('strong', {}, CONFIG.marca.instructor), h('br'), `Instructor, ${CONFIG.marca.cip}`),
+                h('div', { class: 'firma' }, CONFIG.marca.firma ? h('img', { src: CONFIG.marca.firma, alt: 'Firma del instructor' }) : null, h('i'), h('strong', {}, CONFIG.marca.instructor), h('br'), `Instructor, ${CONFIG.marca.cip}`),
                 h('div', { class: 'verif' },
                     h('div', {}, h('div', {}, 'Código ', h('strong', {}, c.codigo)), h('div', {}, 'Verifica en'), h('div', {}, enlace.replace(/^https?:\/\//, ''))),
                     qr(enlace)))));

@@ -29,3 +29,5 @@
   .hoja{box-shadow:none}
 }
 @media (max-width:900px){.hoja{transform-origin:top left}}
+.hoja .firma{position:relative}
+.hoja .firma img{display:block;margin:0 auto -5mm;max-height:20mm;max-width:60mm;position:relative;z-index:1}
