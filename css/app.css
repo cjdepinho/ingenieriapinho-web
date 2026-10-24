@@ -211,3 +211,5 @@ td .acciones-fila { display: flex; gap: .4rem; flex-wrap: wrap; }
 .pregunta .veredicto { font-weight: 600; margin: 0 0 .4rem; }
 .fecha-clase { display: block; font-size: .8rem; color: var(--azul-osc, #345); font-weight: 400; }
 .acciones { display: flex; flex-wrap: wrap; gap: .6rem; align-items: center; margin: 1rem 0; }
+
+[hidden] { display: none !important; }
