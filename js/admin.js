@@ -97,6 +97,7 @@ async function clases(cnt, cursoId) {
         { n: 'descripcion', l: 'Descripción', t: 'textarea' }, { n: 'orden', l: 'Orden', t: 'number', min: 0, req: true }];
     const campM = [{ n: 'titulo', l: 'Título', req: true }, { n: 'archivo', l: 'Archivo (PDF, PowerPoint, Word, Excel…; máx. 50 MB)', t: 'file', ayuda: 'Se guarda en la página y solo lo descargan los alumnos matriculados.' },
         { n: 'url', l: 'O un enlace externo (opcional)', t: 'url' },
+        { n: 'leccion_id', l: 'Clase a la que pertenece', t: 'select', op: [['', 'Todo el curso (material general)'], ...lecc.map((l) => [l.id, `${l.orden}. ${l.titulo}`])] },
         { n: 'tipo', l: 'Tipo', t: 'select', op: [['Documento', 'Documento'], ['Hoja de cálculo', 'Hoja de cálculo'], ['Presentación', 'Presentación'], ['Plantilla', 'Plantilla'], ['Otro', 'Otro']] }];
     const edL = async (l) => { const d = await pedirFormulario({ titulo: l ? 'Editar clase' : 'Nueva clase', campos: campL, valores: l || { orden: lecc.length + 1 } });
         if (d) seguro(async () => { l ? await db.update('lecciones', l.id, d) : await db.insert('lecciones', { ...d, curso_id: cursoId }); clases(cnt, cursoId); }); };
@@ -114,6 +115,7 @@ async function clases(cnt, cursoId) {
                 d.archivo_path = ruta; d.archivo_nombre = archivo.name;
             }
             if (!d.url) d.url = null;
+            if (!d.leccion_id) d.leccion_id = null;
             m ? await db.update('materiales', m.id, d) : await db.insert('materiales', { ...d, curso_id: cursoId });
             aviso('Material guardado.', 'ok'); clases(cnt, cursoId);
         }); };
@@ -126,7 +128,7 @@ async function clases(cnt, cursoId) {
         tabla([{ t: 'N.º', num: true, f: (l) => l.orden }, { t: 'Clase', f: (l) => l.titulo }, { t: 'Video', f: (l) => l.video_url ? 'Sí' : 'No' },
             { t: '', f: (l) => h('div', { class: 'acciones-fila' }, h('button', { class: 'boton sec peq', onClick: () => edL(l) }, 'Editar'), h('button', { class: 'boton peligro peq', onClick: borrar('lecciones', l, l.id) }, 'Eliminar')) }], lecc, 'Aún no hay clases.'),
         h('div', { class: 'barra-herramientas', style: 'margin-top:2rem' }, h('h2', {}, 'Material educativo'), h('span', { class: 'espacio' }), h('button', { class: 'boton', onClick: () => edM(null) }, 'Nuevo material')),
-        tabla([{ t: 'Material', f: (m) => m.titulo }, { t: 'Tipo', f: (m) => m.tipo }, { t: 'Origen', f: (m) => m.archivo_path ? `Archivo: ${m.archivo_nombre || ''}` : 'Enlace' }, { t: '', f: (m) => h('div', { class: 'acciones-fila' }, h('button', { class: 'boton sec peq', onClick: () => edM(m) }, 'Editar'), h('button', { class: 'boton peligro peq', onClick: borrarMat(m) }, 'Eliminar')) }], mats, 'Aún no hay material.'),
+        tabla([{ t: 'Material', f: (m) => m.titulo }, { t: 'Clase', f: (m) => { const l = lecc.find((x) => x.id === m.leccion_id); return l ? `${l.orden}. ${l.titulo}` : 'Todo el curso'; } }, { t: 'Tipo', f: (m) => m.tipo }, { t: 'Origen', f: (m) => m.archivo_path ? `Archivo: ${m.archivo_nombre || ''}` : 'Enlace' }, { t: '', f: (m) => h('div', { class: 'acciones-fila' }, h('button', { class: 'boton sec peq', onClick: () => edM(m) }, 'Editar'), h('button', { class: 'boton peligro peq', onClick: borrarMat(m) }, 'Eliminar')) }], mats, 'Aún no hay material.'),
         h('p', { class: 'nota-pie' }, 'Los archivos que subes se guardan en un espacio privado de la página: solo los descargan alumnos con matrícula activa y tú.'));
 }
 

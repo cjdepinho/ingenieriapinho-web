@@ -165,6 +165,14 @@ async function vistaAula(cursoId, leccionId) {
             vistaAula(cursoId, actual.id);
         } catch (e) { aviso(mensajeError(e), 'error'); }
     };
+    const panelMaterial = (titulo, lista) => {
+        const ver = lista.filter((m) => m.archivo_path || urlSegura(m.url));
+        return ver.length ? h('div', { class: 'panel' }, h('h3', {}, titulo),
+            h('ul', { class: 'lista-check' }, ver.map((m) =>
+                h('li', {}, m.archivo_path
+                    ? h('a', { href: '#', onClick: (e) => { e.preventDefault(); descargar(m); } }, m.titulo)
+                    : h('a', { href: m.url, target: '_blank', rel: 'noopener noreferrer' }, m.titulo), ` (${m.tipo || 'Documento'})`)))) : null;
+    };
     const total = lecc.length, n = lecc.filter((l) => hechas.has(l.id)).length;
     const cert = certs.find((c) => !c.revocado);
     mostrar(h('p', { class: 'migas' }, h('a', { href: '#/' }, 'Mis cursos'), ` / ${curso.titulo}`),
@@ -178,11 +186,8 @@ async function vistaAula(cursoId, leccionId) {
                     : h('div', { class: 'sin-video' }, 'Esta clase no tiene video.')),
                 h('h2', {}, actual.titulo), h('p', {}, actual.descripcion || ''),
                 h('div', { class: 'acciones' }, h('button', { class: 'boton', type: 'button', onClick: marcar }, hechas.has(actual.id) ? 'Marcar como pendiente' : 'Marcar como vista')),
-                materiales.length ? h('div', { class: 'panel' }, h('h3', {}, 'Material del curso'),
-                    h('ul', { class: 'lista-check' }, materiales.filter((m) => m.archivo_path || urlSegura(m.url)).map((m) =>
-                        h('li', {}, m.archivo_path
-                            ? h('a', { href: '#', onClick: (e) => { e.preventDefault(); descargar(m); } }, m.titulo)
-                            : h('a', { href: m.url, target: '_blank', rel: 'noopener noreferrer' }, m.titulo), ` (${m.tipo || 'Documento'})`)))) : null),
+                panelMaterial('Material de esta clase', materiales.filter((m) => m.leccion_id === actual.id)),
+                panelMaterial('Material del curso', materiales.filter((m) => !m.leccion_id))),
             h('aside', {},
                 h('div', { class: 'panel' }, h('h3', {}, 'Tu avance'),
                     h('div', { class: 'barra' }, h('i', { style: `width:${total ? Math.round(n * 100 / total) : 0}%` })),
