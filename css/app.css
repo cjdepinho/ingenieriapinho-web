@@ -218,3 +218,11 @@ td .acciones-fila { display: flex; gap: .4rem; flex-wrap: wrap; }
 .pregunta .opcion { text-align: left; }
 .pregunta .opcion input[type="radio"] { width: auto; flex: 0 0 auto; margin: .3rem 0 0; padding: 0; }
 .pregunta .opcion span { flex: 1 1 auto; text-align: left; line-height: 1.4; }
+
+/* Clases aún no abiertas: se ven en la lista, sin acceso al contenido */
+.lecciones .bloqueada {
+    display: flex; gap: .7rem; align-items: flex-start; padding: .7rem .9rem;
+    border-top: 1px solid var(--linea); color: var(--tinta-suave, #6b7280);
+}
+.lecciones li:first-child .bloqueada { border-top: 0; }
+.lecciones .bloqueada .marca-leccion { background: transparent; border-color: transparent; font-size: .85rem; }

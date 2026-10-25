@@ -114,6 +114,11 @@ const local = {
         guardar(s);
     },
     async rpc(nombre, args) {
+        if (nombre === 'cronograma') {
+            const hoy = new Date().toISOString().slice(0, 10), t = cargar().t;
+            return (t.lecciones || []).filter((l) => !args || !args.p_curso || l.curso_id === args.p_curso)
+                .map((l) => ({ ...l, abierta: !!l.fecha_clase && l.fecha_clase <= hoy })).sort((a, b) => a.orden - b.orden);
+        }
         if (nombre !== 'verificar_certificado') throw new Error('Función no disponible.');
         const codigo = String(args.p_codigo || '').trim().toUpperCase();
         const c = (cargar().t.certificados || []).find((r) => String(r.codigo).toUpperCase() === codigo);

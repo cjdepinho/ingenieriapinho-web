@@ -78,7 +78,7 @@ async function vistaInicio() {
     mostrar(h('p', { class: 'cargando' }, 'Cargando tus cursos…'));
     const [mats, cursos, lecciones, progreso, certs] = await Promise.all([
         db.list('matriculas', { eq: { user_id: sesion.user.id }, order: ['created_at', 'desc'] }),
-        db.list('cursos'), db.list('lecciones'), db.list('progreso', { eq: { user_id: sesion.user.id } }),
+        db.list('cursos'), db.rpc('cronograma', {}).catch(() => db.list('lecciones').then((r) => r.map((l) => ({ ...l, abierta: true })))), db.list('progreso', { eq: { user_id: sesion.user.id } }),
         db.list('certificados', { eq: { user_id: sesion.user.id } })]);
     const tarjetas = mats.filter((m) => m.estado !== 'rechazada').map((m) => {
         const c = cursos.find((x) => x.id === m.curso_id); if (!c) return null;
@@ -87,13 +87,17 @@ async function vistaInicio() {
         const pct = ls.length ? Math.round(hechas * 100 / ls.length) : 0;
         const cert = certs.find((x) => x.curso_id === c.id && !x.revocado);
         const activa = m.estado === 'activa' || m.estado === 'completada';
+        const abiertas = ls.filter((l) => l.abierta).length;
+        const proxima = ls.filter((l) => !l.abierta && l.fecha_clase).sort((a, b) => a.fecha_clase.localeCompare(b.fecha_clase))[0];
+        const enCurso = activa && (abiertas > 0 || sesion.perfil.role === 'admin');
         return h('article', { class: 'tarjeta' },
             etiquetaEstado(m.estado), h('h3', {}, c.titulo),
-            activa ? h('div', {}, h('div', { class: 'barra', role: 'progressbar', 'aria-valuenow': pct, 'aria-valuemin': 0, 'aria-valuemax': 100 }, h('i', { style: `width:${pct}%` })),
+            enCurso ? h('div', {}, h('div', { class: 'barra', role: 'progressbar', 'aria-valuenow': pct, 'aria-valuemin': 0, 'aria-valuemax': 100 }, h('i', { style: `width:${pct}%` })),
                 h('p', { class: 'sub' }, `${hechas} de ${ls.length} clases · ${pct}%`))
+                : activa ? h('p', { class: 'sub' }, proxima ? `Tu matrícula está confirmada. El curso inicia el ${fechaLarga(proxima.fecha_clase)}.` : 'Tu matrícula está confirmada. El curso aún no tiene fecha de inicio: te avisaremos cuando se active.')
                 : h('p', { class: 'sub' }, 'Estamos validando tu pago. Te habilitaremos el curso al confirmarlo.'),
             h('div', { class: 'pie-tarjeta' },
-                activa ? h('a', { class: 'boton peq', href: `#/aula/${c.id}` }, 'Ir al aula') : null,
+                enCurso ? h('a', { class: 'boton peq', href: `#/aula/${c.id}` }, 'Ir al aula') : null,
                 cert ? h('a', { class: 'boton sec peq', href: `../certificado.html?c=${encodeURIComponent(cert.codigo)}`, target: '_blank', rel: 'noopener' }, 'Ver certificado') : null));
     }).filter(Boolean);
     const rechazadas = mats.filter((m) => m.estado === 'rechazada').length;
@@ -194,15 +198,20 @@ async function vistaAula(cursoId, leccionId) {
     const [mats, [curso]] = await Promise.all([db.list('matriculas', { eq: { user_id: sesion.user.id, curso_id: cursoId } }), db.list('cursos', { eq: { id: cursoId } })]);
     if (!curso || !mats.some((m) => m.estado === 'activa' || m.estado === 'completada') && sesion.perfil.role !== 'admin')
         return mostrar(h('h1', {}, 'Sin acceso'), h('p', {}, 'Este curso aún no está habilitado en tu cuenta.'), h('a', { class: 'boton', href: '#/' }, 'Volver'));
-    const [lecc, materiales, progreso, certs, avances, intentos, info] = await Promise.all([
+    const [crono, abiertasDb, materiales, progreso, certs, avances, intentos, info] = await Promise.all([
+        db.rpc('cronograma', { p_curso: cursoId }).catch(() => null),
         db.list('lecciones', { eq: { curso_id: cursoId }, order: 'orden' }), db.list('materiales', { eq: { curso_id: cursoId } }),
         db.list('progreso', { eq: { user_id: sesion.user.id } }), db.list('certificados', { eq: { user_id: sesion.user.id, curso_id: cursoId } }),
         db.list('avance', { eq: { user_id: sesion.user.id } }).catch(() => []),
         db.list('intentos', { eq: { user_id: sesion.user.id, curso_id: cursoId } }).catch(() => []),
         db.rpc('examen_info', { p_curso: cursoId }).catch(() => null)]);
+    // El servidor solo entrega el contenido de las clases ya abiertas (fecha de clase llegada); las demás aparecen bloqueadas.
+    const completas = new Map(abiertasDb.map((l) => [l.id, l]));
+    const lecc = (crono || abiertasDb.map((l) => ({ ...l, abierta: true }))).map((c) => ({ ...c, ...(completas.get(c.id) || {}), bloqueada: !completas.has(c.id) }));
+    const libres = lecc.filter((l) => !l.bloqueada);
     const hechas = new Set(progreso.map((p) => p.leccion_id));
     const av = new Map(avances.map((a) => [a.leccion_id, a]));
-    const actual = lecc.find((l) => l.id === leccionId) || lecc.find((l) => !hechas.has(l.id)) || lecc[0];
+    const actual = libres.find((l) => l.id === leccionId) || libres.find((l) => !hechas.has(l.id)) || libres[libres.length - 1];
     const vid = actual && youtubeId(actual.video_url);
     const matClase = (l) => materiales.filter((m) => m.leccion_id === l.id && (m.archivo_path || urlSegura(m.url)));
     // Una clase exige lo que tenga: video al 90 % y/o material descargado.
@@ -213,6 +222,9 @@ async function vistaAula(cursoId, leccionId) {
         return { nv, nm, pend, pct, desc, listo: !pend && (!nv || pct >= 90) && (!nm || desc) };
     };
     const total = lecc.length;
+    const proxima = lecc.filter((l) => l.bloqueada && l.fecha_clase).sort((a, b) => a.fecha_clase.localeCompare(b.fecha_clase))[0];
+    const filaBloqueada = (l) => h('span', { class: 'bloqueada' }, h('span', { class: 'marca-leccion' }, '🔒'),
+        h('span', {}, l.titulo, h('small', { class: 'fecha-clase' }, l.fecha_clase ? `Se habilita el ${fechaLarga(l.fecha_clase)}` : 'Sin fecha programada')));
     const examen = !!(info && info.preguntas > 0);
     const cert = certs.find((c) => !c.revocado);
 
@@ -244,7 +256,7 @@ async function vistaAula(cursoId, leccionId) {
         chipMat.className = `etiqueta ${e.desc ? 'ok' : 'aviso'}`; chipMat.textContent = e.desc ? 'Material descargado ✓' : 'Material por descargar';
         btnManual.hidden = e.nv || e.nm || e.pend || hechas.has(actual.id);
         nota.textContent = (e.nv || e.nm) ? (hechas.has(actual.id) ? 'Clase completada.' : 'La clase se marca sola cuando ves el 90 % del video y descargas el material.') : '';
-        for (const l of lecc) { const m = marcasLista.get(l.id); m.a.classList.toggle('hecha', hechas.has(l.id)); m.marca.textContent = hechas.has(l.id) ? '✓' : ''; }
+        for (const l of libres) { const m = marcasLista.get(l.id); m.a.classList.toggle('hecha', hechas.has(l.id)); m.marca.textContent = hechas.has(l.id) ? '✓' : ''; }
         const n = lecc.filter((l) => hechas.has(l.id)).length;
         barra.style.width = `${total ? Math.round(n * 100 / total) : 0}%`; textoAvance.textContent = `${n} de ${total} clases`;
         pintarExamen();
@@ -285,6 +297,10 @@ async function vistaAula(cursoId, leccionId) {
     mostrar(h('p', { class: 'migas' }, h('a', { href: '#/' }, 'Mis cursos'), ` / ${curso.titulo}`),
         h('h1', {}, curso.titulo),
         !lecc.length ? h('div', { class: 'panel' }, 'El instructor aún no publicó las clases de este curso.') :
+        !actual ? h('div', { class: 'panel' }, h('h3', {}, 'Este curso aún no está activo'),
+            h('p', {}, proxima ? `Tu matrícula está confirmada. La primera clase se habilita el ${fechaLarga(proxima.fecha_clase)}.` : 'Tu matrícula está confirmada, pero el curso aún no tiene fecha de inicio. Te avisaremos cuando se active.'),
+            h('p', { class: 'sub' }, 'Las clases y el material se habilitan en la fecha programada de cada una.'),
+            h('ol', { class: 'lecciones' }, lecc.map((l) => h('li', {}, filaBloqueada(l)))), h('a', { class: 'boton sec', href: '#/' }, 'Volver')) :
         h('div', { class: 'aula' },
             h('div', {},
                 cajaVideo,
@@ -298,12 +314,13 @@ async function vistaAula(cursoId, leccionId) {
                     cert ? h('a', { class: 'boton peq', href: `../certificado.html?c=${encodeURIComponent(cert.codigo)}`, target: '_blank', rel: 'noopener' }, 'Ver mi certificado') : null),
                 cajaExamen,
                 h('ol', { class: 'lecciones' }, lecc.map((l) => {
+                    if (l.bloqueada) return h('li', {}, filaBloqueada(l));
                     const marca = h('span', { class: 'marca-leccion' });
                     const a = h('a', { href: `#/aula/${cursoId}/${l.id}`, class: l.id === actual.id ? 'actual' : '' }, marca, h('span', {}, l.titulo, (!youtubeId(l.video_url) && l.fecha_clase) ? h('small', { class: 'fecha-clase' }, `En vivo: ${fechaLarga(l.fecha_clase)}`) : null));
                     marcasLista.set(l.id, { a, marca });
                     return h('li', {}, a);
                 })))));
-    pintar();
+    if (actual) pintar();
     if (vid) seguirVideo(cajaVideo, vid, estado(actual).pct, (pct) => guardarAvance(actual, { video_pct: pct }));
 }
 

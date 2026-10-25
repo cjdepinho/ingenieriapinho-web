@@ -114,6 +114,17 @@ from public.cursos c
 order by c.orden`
             },
             {
+                id: 'calendario-clases', titulo: 'Calendario de apertura de clases',
+                detalle: 'Qué día se abre cada clase y si el alumno ya puede verla. Sin fecha = cerrada.',
+                sql: `select c.titulo as curso, l.orden, l.titulo as clase, l.fecha_clase,
+       case when l.fecha_clase is null then 'Cerrada (sin fecha)'
+            when l.fecha_clase <= (now() at time zone 'America/Lima')::date then 'Abierta'
+            else 'Se abre más adelante' end as estado
+from public.lecciones l
+join public.cursos c on c.id = l.curso_id
+order by c.titulo, l.orden`
+            },
+            {
                 id: 'consultas-abiertas', titulo: 'Consultas sin atender',
                 detalle: 'Mensajes recibidos desde el formulario de contacto.',
                 sql: `select created_at::date as fecha, nombre, email, mensaje
@@ -202,6 +213,13 @@ order by created_at`
   select m.id from public.matriculas m join public.profiles p on p.id = m.user_id where p.email = {{correo}})`,
                     `delete from public.matriculas where user_id in (select id from public.profiles where email = {{correo}})`
                 ]
+            },
+            {
+                id: 'programar-curso', titulo: 'Programar las fechas de apertura de un curso', modifica: true,
+                detalle: 'La clase 1 se abre en la fecha de inicio y cada clase siguiente cada N días (7 = una por semana). Usa la dirección del curso, por ejemplo ia-para-ingenieria-civil.',
+                params: [{ n: 'slug', l: 'Dirección del curso', t: 'text', v: '' }, { n: 'inicio', l: 'Fecha de la clase 1 (AAAA-MM-DD)', t: 'text', v: '' }, { n: 'dias', l: 'Días entre clases', t: 'number', v: '7' }],
+                sql: `update public.lecciones set fecha_clase = {{inicio}}::date + (orden - 1) * {{dias}}::int
+where curso_id = (select id from public.cursos where slug = {{slug}})`
             },
             {
                 id: 'atender-todas', titulo: 'Marcar todas las consultas como atendidas', modifica: true,
