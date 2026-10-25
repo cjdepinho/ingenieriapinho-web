@@ -214,12 +214,12 @@ async function vistaAula(cursoId, leccionId) {
     const actual = libres.find((l) => l.id === leccionId) || libres.find((l) => !hechas.has(l.id)) || libres[libres.length - 1];
     const vid = actual && youtubeId(actual.video_url);
     const matClase = (l) => materiales.filter((m) => m.leccion_id === l.id && (m.archivo_path || urlSegura(m.url)));
-    // Una clase exige lo que tenga: video al 90 % y/o material descargado.
+    // Una clase se completa solo con las dos cosas: video visto al 90 % y todo el material descargado.
+    // Si falta publicar el video o el material, el alumno espera: no puede avanzar con una sola.
     const estado = (l) => {
         const a = av.get(l.id) || {}, nv = !!youtubeId(l.video_url), nm = matClase(l).length > 0;
         const pct = a.video_pct || 0, desc = !!a.descargado;
-        const pend = !nv && !!l.fecha_clase;   // clase programada cuyo video aún no se publicó
-        return { nv, nm, pend, pct, desc, listo: !pend && (!nv || pct >= 90) && (!nm || desc) };
+        return { nv, nm, pct, desc, espera: !nv || !nm, listo: nv && nm && pct >= 90 && desc };
     };
     const total = lecc.length;
     const proxima = lecc.filter((l) => l.bloqueada && l.fecha_clase).sort((a, b) => a.fecha_clase.localeCompare(b.fecha_clase))[0];
@@ -232,7 +232,6 @@ async function vistaAula(cursoId, leccionId) {
     const nota = h('p', { class: 'sub' });
     const marcasLista = new Map();
     const barra = h('i'), textoAvance = h('p', { class: 'sub' }), cajaExamen = h('div');
-    const btnManual = h('button', { class: 'boton', type: 'button', onClick: () => guardarAvance(actual, {}) }, 'Marcar como vista');
 
     const pintarExamen = () => {
         if (!examen) { cajaExamen.replaceChildren(); return; }
@@ -251,11 +250,13 @@ async function vistaAula(cursoId, leccionId) {
     };
     const pintar = () => {
         const e = estado(actual);
-        chipVideo.hidden = !e.nv; chipMat.hidden = !e.nm;
-        chipVideo.className = `etiqueta ${e.pct >= 90 ? 'ok' : 'aviso'}`; chipVideo.textContent = `Video: ${Math.min(e.pct, 100)} %${e.pct >= 90 ? ' ✓' : ' (mínimo 90 %)'}`;
-        chipMat.className = `etiqueta ${e.desc ? 'ok' : 'aviso'}`; chipMat.textContent = e.desc ? 'Material descargado ✓' : 'Material por descargar';
-        btnManual.hidden = e.nv || e.nm || e.pend || hechas.has(actual.id);
-        nota.textContent = (e.nv || e.nm) ? (hechas.has(actual.id) ? 'Clase completada.' : 'La clase se marca sola cuando ves el 90 % del video y descargas el material.') : '';
+        chipVideo.className = `etiqueta ${e.pct >= 90 ? 'ok' : 'aviso'}`;
+        chipVideo.textContent = e.nv ? `Video: ${Math.min(e.pct, 100)} %${e.pct >= 90 ? ' ✓' : ' (mínimo 90 %)'}` : 'Video: aún no publicado';
+        chipMat.className = `etiqueta ${e.desc && e.nm ? 'ok' : 'aviso'}`;
+        chipMat.textContent = !e.nm ? 'Material: aún no publicado' : e.desc ? 'Material descargado ✓' : 'Material por descargar';
+        nota.textContent = hechas.has(actual.id) ? 'Clase completada.'
+            : e.espera ? `Para completar esta clase necesitas ver el video (90 % o más) y descargar el material. Espera a que se publique ${!e.nv && !e.nm ? 'el video y el material' : !e.nv ? 'el video' : 'el material'}.`
+            : 'La clase se marca sola cuando ves el 90 % del video y descargas el material: se necesitan las dos cosas.';
         for (const l of libres) { const m = marcasLista.get(l.id); m.a.classList.toggle('hecha', hechas.has(l.id)); m.marca.textContent = hechas.has(l.id) ? '✓' : ''; }
         const n = lecc.filter((l) => hechas.has(l.id)).length;
         barra.style.width = `${total ? Math.round(n * 100 / total) : 0}%`; textoAvance.textContent = `${n} de ${total} clases`;
@@ -266,9 +267,6 @@ async function vistaAula(cursoId, leccionId) {
             const previo = av.get(l.id) || {};
             const a = { user_id: sesion.user.id, leccion_id: l.id, video_pct: previo.video_pct || 0, descargado: !!previo.descargado, ...parche };
             a.video_pct = Math.max(previo.video_pct || 0, a.video_pct);
-            const e = estado(l);
-            if (!e.nv && !e.pend) a.video_pct = 100;
-            if (!e.nm) a.descargado = true;
             a.actualizado = new Date().toISOString();
             await db.upsert('avance', a, ['user_id', 'leccion_id']);
             av.set(l.id, a);
@@ -292,7 +290,7 @@ async function vistaAula(cursoId, leccionId) {
         ? h('div', { class: 'sin-video' }, h('div', {}, h('strong', {}, 'Esta clase se emitirá en vivo'), h('br'),
             `${fechaLarga(actual.fecha_clase)}${actual.hora_clase ? `, ${actual.hora_clase}` : ''}`, h('br'),
             'La grabación aparecerá aquí cuando el instructor la publique.'))
-        : h('div', { class: 'sin-video' }, 'Esta clase no tiene video.');
+        : h('div', { class: 'sin-video' }, 'El video de esta clase aún no está publicado.');
     const cajaVideo = h('div', { class: 'video' }, vid ? null : aviso_sin_video);
     mostrar(h('p', { class: 'migas' }, h('a', { href: '#/' }, 'Mis cursos'), ` / ${curso.titulo}`),
         h('h1', {}, curso.titulo),
@@ -305,7 +303,7 @@ async function vistaAula(cursoId, leccionId) {
             h('div', {},
                 cajaVideo,
                 h('h2', {}, actual.titulo), h('p', {}, actual.descripcion || ''),
-                h('div', { class: 'acciones' }, chipVideo, chipMat, btnManual), nota,
+                h('div', { class: 'acciones' }, chipVideo, chipMat), nota,
                 panelMaterial('Material de esta clase', matClase(actual), () => guardarAvance(actual, { descargado: true })),
                 panelMaterial('Material del curso', materiales.filter((m) => !m.leccion_id))),
             h('aside', {},
