@@ -124,7 +124,7 @@ const local = {
         const c = (cargar().t.certificados || []).find((r) => String(r.codigo).toUpperCase() === codigo);
         return c ? [{
             codigo: c.codigo, alumno_nombre: c.alumno_nombre, curso_titulo: c.curso_titulo,
-            horas: c.horas, fecha_emision: c.fecha_emision, revocado: c.revocado
+            horas: c.horas, fecha_emision: c.fecha_emision, revocado: c.revocado, nota: c.nota, temario: c.temario
         }] : [];
     },
     auth: {

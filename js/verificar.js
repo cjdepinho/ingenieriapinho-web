@@ -29,6 +29,7 @@ async function verificar(codigo) {
                 h('dt', {}, 'Otorgado a'), h('dd', {}, c.alumno_nombre),
                 h('dt', {}, 'Curso'), h('dd', {}, c.curso_titulo),
                 c.horas ? [h('dt', {}, 'Duración'), h('dd', {}, `${c.horas} horas`)] : null,
+                (c.nota !== null && c.nota !== undefined && c.nota !== '') ? [h('dt', {}, 'Nota final'), h('dd', {}, `${String(Number(c.nota)).replace('.', ',')} / 20`)] : null,
                 h('dt', {}, 'Fecha de emisión'), h('dd', {}, fechaLarga(c.fecha_emision)))));
     } catch (e) {
         salida.replaceChildren(h('div', { class: 'resultado invalido' },
